@@ -1,5 +1,7 @@
 # Installing Caduceus
 
+[Hướng dẫn cài đặt, cập nhật và khôi phục firmware bằng tiếng Việt](huong-dan-cap-nhat-firmware.md)
+
 > [!WARNING]
 > **Use at your own risk.** Caduceus is beta, unofficial firmware modification: bugs will appear,
 > and flashing can brick your camera or lose data. The author accepts **no responsibility for any damage**.

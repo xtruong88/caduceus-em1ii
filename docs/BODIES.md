@@ -1,12 +1,13 @@
 # Which other Olympus bodies could run Caduceus?
 
-Status: the **PEN E-P7** is tested here, and the **OM-3** has its own camera-tested port by androidfanman. Nothing else has been tried on a camera, so **please do not flash an E-P7 build on any other body**. This page is a map of what we know, updated as we learn more.
+Status: the **PEN E-P7** is tested here. The **OM-3** has its own camera-tested port by androidfanman, and camera test results for the **E-M1 Mark II** are described below. Use only firmware built for your camera model; **never flash an E-P7 build on any other body**. This page is a map of what we know, updated as we learn more.
 
 ## Where each body stands
 
 | Body | Closeness to the E-P7 | Home for looks | Status |
 |---|---|---|---|
-| **E-M10 IV** | Closest: same file size and load address, 47% of edits match by signature | No COLOR profiles, so looks need a new home | **First target.** In development, not yet run on a camera. **Needs a volunteer to test and report issues:** [issue #21](https://github.com/cakelesscoder/caduceus-ep7/issues/21) (`docs/PORT_EM10IV.md`) |
+| **E-M1 Mark II** | Different base (0x60021020); TruePic VIII | Color Creator / Picture Mode | **Port in development, camera-tested** ([xtruong88/caduceus-em1ii](https://github.com/xtruong88/caduceus-em1ii)): rec limit, focus stacking, film looks via the E-P7 COLOR engine behind Color Creator, 65:24 / 21:9 stills, card looks (`LOOKS.BIN`) all run on camera (v0.4c15). v0.4c16 / v0.4c17 build from OM's current 3.70 catalog file and pass the emulator checks, not yet camera-tested. Halation planned (`docs/PORT_EM1MK2.md`, `docs/OMD-EM1-II/`) |
+| **E-M10 IV** | Closest: same file size and load address, 47% of edits match by signature | No COLOR profiles, so looks need a new home | **Candidate.** In development, not yet run on a camera. **Needs a volunteer to test and report issues:** [issue #21](https://github.com/cakelesscoder/caduceus-ep7/issues/21) (`docs/PORT_EM10IV.md`) |
 | **E-M5 III** | 36% match; SD loader and log hook don't match | None | Second choice (`docs/PORT_EM5III.md`) |
 | **E-M1 III** | Larger file and different load address; match not worked out | None | Firmware analysed on disk only |
 | **E-M10 III, E-PL9** | Same main size; match not run | Probably none | Not analysed |

@@ -145,7 +145,7 @@ export function validatePack(pack: Pack): Problem[] {
 export const hasTone = (l: Look) => l.kind === 'colour' && !!l.tone && !toneIsZero(l.tone);
 
 /** The look's 64-byte LOOKS.BIN record (bundle bytes 0..44 or the tone block, class, slot mask, bloom tint, name[16]). */
-export function lookRecord(l: Look): Uint8Array {
+export function lookRecord(l: Look, fw: Fw = FW): Uint8Array {
   const r = new Uint8Array(REC_LEN);
   for (let k = 0; k < 12; k++) { r[k] = u8(l.hue[k]); r[12 + k] = u8(l.light[k]); }
   r[24] = GRAIN_BYTE[l.grain];
@@ -163,7 +163,7 @@ export function lookRecord(l: Look): Uint8Array {
     r[TONE_FLAG] = 1;
     for (const k of TONE_KEYS) r[TONE_OFF[k]] = u8(l.tone[k]);
     r[MASK_OFF] = 1;
-    if (FW >= 24) {
+    if (fw >= 24) {
       for (let k = 0; k < 12; k++) r[38 + (k >> 1)] |= (l.sat[k] & 15) << (4 * (k & 1));   // v0.24: a Film pick sets saturation
       r[44] = 1;
     }
@@ -171,7 +171,7 @@ export function lookRecord(l: Look): Uint8Array {
     if (!mono) for (let k = 0; k < 12; k++) r[B_SAT + k] = u8(l.sat[k]);
     r[MASK_OFF] = mono ? 2 : 3;         // colour looks without tone carry sat (-5..5), so they may go in MONO slots
   }
-  if (!mono && l.lens_correction && FW >= 25) r[MASK_OFF] |= MASK_KEEP_CORRECTION;
+  if (!mono && l.lens_correction && fw >= 25) r[MASK_OFF] |= MASK_KEEP_CORRECTION;
   const nm = new TextEncoder().encode(l.name);
   r.set(nm.subarray(0, 15), NAME_OFF);
   return r;
@@ -193,12 +193,12 @@ export class PackError extends Error {
 }
 
 /** Validated LOOKS.BIN bytes for the pack (throws PackError). */
-export function encodeLooksBin(pack: Pack): Uint8Array {
+export function encodeLooksBin(pack: Pack, fw: Fw = FW): Uint8Array {
   const probs = validatePack({ ...pack, slots: {} });
   if (probs.length) throw new PackError(probs);
   const n = pack.looks.length;
   const out = new Uint8Array(HDR_LEN + REC_LEN * n);
-  pack.looks.forEach((l, j) => out.set(lookRecord(l), HDR_LEN + REC_LEN * j));
+  pack.looks.forEach((l, j) => out.set(lookRecord(l, fw), HDR_LEN + REC_LEN * j));
   out.set(looksHeader(n, 0), 0);
   const crc = crc32(out.subarray(0, 16), out.subarray(20));
   new DataView(out.buffer).setUint32(16, crc, true);

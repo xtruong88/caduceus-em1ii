@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cập nhật firmware Olympus OM-D E-M1 Mark II bằng OM Workspace</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#1c2230; --muted:#5b6475; --line:#dfe3ea;
+  --accent:#d6402b; --accent-soft:#fdeceA; --ok:#1f8a4c; --ok-soft:#e6f5ec;
+  --warn:#b4570a; --warn-soft:#fff3e2; --danger:#b3261e; --danger-soft:#fdecea;
+  --note:#2a5db0; --note-soft:#e8f0fc;
+  --ill-bg:#eef1f6; --ill-body:#2b3240; --ill-body2:#434c5e; --ill-screen:#0e1420; --ill-text:#e8ecf4;
+  --ill-win:#ffffff; --ill-bar:#d9dee8; --ill-hl:#d6402b; --ill-ok:#27a85e;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151c; --card:#1a1f2a; --ink:#e8ecf4; --muted:#9aa4b8; --line:#2c3444;
+    --accent:#ff6a52; --accent-soft:#3a201c; --ok:#4cc57f; --ok-soft:#18301f;
+    --warn:#f0a050; --warn-soft:#352612; --danger:#ff7b72; --danger-soft:#3a1d1b;
+    --note:#7aa7f0; --note-soft:#1b2842;
+    --ill-bg:#222a38; --ill-win:#262d3c; --ill-bar:#394257;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151c; --card:#1a1f2a; --ink:#e8ecf4; --muted:#9aa4b8; --line:#2c3444;
+  --accent:#ff6a52; --accent-soft:#3a201c; --ok:#4cc57f; --ok-soft:#18301f;
+  --warn:#f0a050; --warn-soft:#352612; --danger:#ff7b72; --danger-soft:#3a1d1b;
+  --note:#7aa7f0; --note-soft:#1b2842;
+  --ill-bg:#222a38; --ill-win:#262d3c; --ill-bar:#394257;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--note)}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 80px}
+header.hero{padding:40px 0 20px}
+.eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.2;margin:8px 0 12px}
+.lead{color:var(--muted);font-size:17px;margin:0}
+.badge{display:inline-block;background:var(--ok-soft);color:var(--ok);border-radius:999px;padding:2px 12px;font-weight:700;font-size:14px}
+h2{font-size:24px;margin:0 0 14px;display:flex;gap:12px;align-items:center;line-height:1.3}
+h2 .n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:17px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin:20px 0}
+ol,ul{padding-left:22px}
+li{margin:8px 0}
+.callout{border-left:4px solid;border-radius:8px;padding:12px 16px;margin:16px 0}
+.callout.warn{background:var(--danger-soft);border-color:var(--danger)}
+.callout.warn b.t{color:var(--danger)}
+.callout.tip{background:var(--note-soft);border-color:var(--note)}
+.callout.ok{background:var(--ok-soft);border-color:var(--ok)}
+figure{margin:18px 0;background:var(--ill-bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font-size:14px;color:var(--muted);margin-top:8px;text-align:center}
+.src{font-size:14px;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 0}
+nav.toc a{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:14px;text-decoration:none;color:var(--ink)}
+nav.toc a:hover{border-color:var(--accent);color:var(--accent)}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:8px 0 0;padding:0;list-style:none;counter-reset:s}
+.flow li{counter-increment:s;margin:0;background:var(--ill-bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;text-align:center}
+.flow li::before{content:counter(s);display:block;font-weight:800;color:var(--accent);font-size:20px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{border:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
+th{background:var(--ill-bg)}
+@media (max-width:640px){
+  table,thead,tbody,tr,th,td{display:block}
+  thead{display:none}
+  tr{border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+  td{border:0;border-top:1px solid var(--line)}
+  td:first-child{background:var(--ill-bg);border-top:0}
+  section{padding:18px}
+}
+code,kbd{background:var(--ill-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.92em}
+.theme{position:fixed;top:12px;right:12px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
+</style>
+</head>
+<body>
+<button class="theme" id="theme" type="button" aria-label="Đổi giao diện sáng/tối">Sáng/Tối</button>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Hướng dẫn · Windows / macOS · USB</div>
+  <h1>Cập nhật firmware chính thức cho Olympus OM-D E-M1 Mark II</h1>
+  <p class="lead">Dùng <b>OM Workspace</b> để cập nhật firmware thân máy qua USB. Phiên bản mới nhất OM System đang công bố cho <b>E-M1 Mark II</b> là <span class="badge">3.7</span>, phát hành ngày 19/01/2023.
+  <a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/download/software/firm/e1/">Danh sách firmware chính thức</a></p>
+
+  <div class="callout warn" role="alert">
+    <b class="t">Cảnh báo:</b> <b>Tuyệt đối không nạp tệp Caduceus của PEN E-P7, kể cả tệp khôi phục của E-P7, vào E-M1 Mark II.</b> Hãy xác nhận tên model trên thân máy trước khi bắt đầu. Khi LCD báo <code>OK</code> trên E-M1 Mark II, <b>giữ nguyên cáp USB</b> để khởi động lại máy ảnh và nạp lại cài đặt.
+    <div class="src"><a href="./BODIES.md">Các thân máy được Caduceus hỗ trợ</a> · <a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/qa/contents/ow/ow_a1.html">Quy trình của OM System</a></div>
+  </div>
+
+  <ol class="flow" aria-label="Tổng quan các bước">
+    <li>Kiểm tra model &amp; bản hiện tại</li>
+    <li>Chuẩn bị pin, cáp, sao lưu</li>
+    <li>Cài OM Workspace, nối USB</li>
+    <li>(Tùy chọn) Lưu cài đặt riêng</li>
+    <li>Tải &amp; ghi firmware</li>
+    <li>Tắt/bật khi LCD hiện OK</li>
+    <li>Kiểm tra sau cập nhật</li>
+  </ol>
+  <nav class="toc" aria-label="Mục lục">
+    <a href="#b1">1. Kiểm tra</a><a href="#b2">2. Chuẩn bị</a><a href="#b3">3. Cài &amp; kết nối</a><a href="#b4">4. Sao lưu</a><a href="#b5">5. Ghi firmware</a><a href="#b6">6. Khởi động lại</a><a href="#b7">7. Kiểm tra sau</a><a href="#loi">Lỗi thường gặp</a><a href="#ep7">Nếu có E-P7</a>
+  </nav>
+</header>
+
+<!-- 1 -->
+<section id="b1">
+  <h2><span class="n">1</span>Xác nhận model và phiên bản hiện tại</h2>
+  <ol>
+    <li>Đọc đúng tên <b>E-M1 Mark II</b> trên thân máy. Các model <b>E-M1</b>, <b>E-M1 Mark III</b> và <b>OM-1 Mark II</b> có firmware riêng.</li>
+    <li>Bật máy ảnh, nhấn <kbd>MENU</kbd>, mở <b>Setup Menu</b> (biểu tượng cờ lê) rồi chọn <b>Firmware</b>. Ghi lại số ở dòng <b>Body</b>. Nếu có dòng <b>Lens</b>, đó là phiên bản của ống kính đang gắn. <span class="src"><a href="https://download.omsystem.com/pages/inst/em1m2/manual_em1m2_ENU.pdf">Sổ tay, trang 109</a></span></li>
+    <li>Nếu <b>Body</b> đã là <b>3.7</b>, bạn đã có bản hiện được công bố. Nếu số thấp hơn, tiếp tục và chọn bản cập nhật mà OM Workspace cung cấp cho đúng thân máy. OM Workspace <b>không hỗ trợ quay về phiên bản cũ</b> sau khi cập nhật. <span class="src"><a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/qa/contents/ow/ow_a1.html">Quy trình cập nhật</a></span></li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 760 250" role="img" aria-label="Minh họa đường dẫn MENU, Setup Menu, Firmware trên LCD">
+      <defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <!-- screen 1 -->
+      <g transform="translate(20,20)">
+        <rect width="210" height="170" rx="10" fill="var(--ill-screen)"/>
+        <text x="105" y="28" fill="var(--ill-text)" font-size="14" text-anchor="middle" font-weight="700">MENU</text>
+        <rect x="14" y="44" width="182" height="30" rx="5" fill="#2e3850"/>
+        <text x="26" y="64" fill="var(--ill-text)" font-size="13">📷 Shooting Menu</text>
+        <rect x="14" y="80" width="182" height="30" rx="5" fill="var(--ill-hl)"/>
+        <text x="26" y="100" fill="#fff" font-size="13" font-weight="700">🔧 Setup Menu</text>
+        <rect x="14" y="116" width="182" height="30" rx="5" fill="#2e3850"/>
+        <text x="26" y="136" fill="var(--ill-text)" font-size="13">⚙ Custom Menu</text>
+      </g>
+      <text x="125" y="212" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">① Nhấn MENU</text>
+      <text x="125" y="232" fill="var(--muted)" font-size="12" text-anchor="middle">chọn biểu tượng cờ lê</text>
+      <line x1="238" y1="105" x2="268" y2="105" stroke="var(--accent)" stroke-width="3" marker-end="url(#ar)"/>
+      <!-- screen 2 -->
+      <g transform="translate(275,20)">
+        <rect width="210" height="170" rx="10" fill="var(--ill-screen)"/>
+        <text x="105" y="28" fill="var(--ill-text)" font-size="14" text-anchor="middle" font-weight="700">Setup Menu</text>
+        <rect x="14" y="44" width="182" height="26" rx="5" fill="#2e3850"/>
+        <text x="26" y="62" fill="var(--ill-text)" font-size="12">Card Setup</text>
+        <rect x="14" y="74" width="182" height="26" rx="5" fill="#2e3850"/>
+        <text x="26" y="92" fill="var(--ill-text)" font-size="12">Date/Time</text>
+        <rect x="14" y="104" width="182" height="26" rx="5" fill="var(--ill-hl)"/>
+        <text x="26" y="122" fill="#fff" font-size="12" font-weight="700">Firmware</text>
+        <rect x="14" y="134" width="182" height="26" rx="5" fill="#2e3850"/>
+        <text x="26" y="152" fill="var(--ill-text)" font-size="12">Language</text>
+      </g>
+      <text x="380" y="212" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">② Chọn Firmware</text>
+      <text x="380" y="232" fill="var(--muted)" font-size="12" text-anchor="middle">trong Setup Menu</text>
+      <line x1="493" y1="105" x2="523" y2="105" stroke="var(--accent)" stroke-width="3" marker-end="url(#ar)"/>
+      <!-- screen 3 -->
+      <g transform="translate(530,20)">
+        <rect width="210" height="170" rx="10" fill="var(--ill-screen)"/>
+        <text x="105" y="28" fill="var(--ill-text)" font-size="14" text-anchor="middle" font-weight="700">Firmware</text>
+        <text x="20" y="75" fill="var(--ill-text)" font-size="14">Body</text>
+        <text x="190" y="75" fill="var(--ill-ok)" font-size="18" text-anchor="end" font-weight="700">3.7</text>
+        <line x1="14" y1="88" x2="196" y2="88" stroke="#3a4560"/>
+        <text x="20" y="115" fill="var(--ill-text)" font-size="14">Lens</text>
+        <text x="190" y="115" fill="var(--ill-text)" font-size="14" text-anchor="end">x.x</text>
+        <text x="105" y="152" fill="#8e99b3" font-size="11" text-anchor="middle">(dòng Lens chỉ hiện khi gắn ống kính)</text>
+      </g>
+      <text x="635" y="212" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">③ Đọc dòng Body</text>
+      <text x="635" y="232" fill="var(--muted)" font-size="12" text-anchor="middle">3.7 = bản mới nhất</text>
+    </svg>
+    <figcaption>Hình 1 — Đường dẫn kiểm tra phiên bản (hình minh họa, bố cục thật trên máy có thể khác đôi chút).</figcaption>
+  </figure>
+</section>
+
+<!-- 2 -->
+<section id="b2">
+  <h2><span class="n">2</span>Chuẩn bị máy ảnh và máy tính</h2>
+  <ul>
+    <li><b>Pin và nguồn điện.</b> Sạc đầy pin <b>BLH-1</b>. Nếu dùng laptop, cắm nguồn và đặt máy tính để không tự ngủ trong quá trình cập nhật. Kết nối Internet ổn định, ưu tiên mạng có dây nếu sẵn có. Đăng nhập máy tính bằng tài khoản quản trị. <span class="src"><a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/qa/products/em1m2/">Thông số E-M1 Mark II</a> · <a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/qa/contents/ow/ow_a1.html">Yêu cầu cập nhật</a></span></li>
+    <li><b>Cáp USB dữ liệu.</b> Ưu tiên cáp đi kèm <b>CB-USB11</b>, đầu USB-C cắm vào thân máy và đầu USB-A cắm vào máy tính. Nếu máy tính chỉ có USB-C, dùng cáp USB-C có truyền dữ liệu và tương thích với hai thiết bị. Cắm trực tiếp vào cổng máy tính nếu có thể. <span class="src"><a href="https://support.jp.omsystem.com/jp/support/cs/pen/acce/pen_usb.html">Bảng cáp USB</a></span></li>
+    <li><b>Ảnh và video.</b> Sao chép dữ liệu cần giữ từ cả hai thẻ, nếu đang dùng hai thẻ. Mở thử vài tệp ở nơi sao lưu. Tắt máy ảnh, chờ đèn truy cập thẻ tắt và <b>tháo toàn bộ thẻ SD</b> trước khi nối USB. Bạn có thể giữ nguyên dữ liệu trên các thẻ đã tháo, không cần định dạng chúng để cập nhật qua OM Workspace.</li>
+    <li><b>Cài đặt cá nhân.</b> Chụp lại hoặc ghi ra các thiết lập quan trọng như C1/C2/C3, chức năng nút, AF, cấu hình ảnh/video và khe lưu. OM Workspace có bước tự lưu rồi nạp lại cài đặt trên E-M1 Mark II. Bạn có thể tạo thêm tệp sao lưu riêng theo mục 4.</li>
+  </ul>
+  <p>Bạn có thể cập nhật thân máy khi không gắn ống kính. Nếu để ống kính trên máy, hãy chọn đúng dòng thân máy trong trình cập nhật.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 270" role="img" aria-label="Sơ đồ chuẩn bị: pin đầy, tháo thẻ SD, cáp dữ liệu, laptop cắm nguồn">
+      <!-- laptop -->
+      <g transform="translate(30,40)">
+        <rect x="0" y="0" width="230" height="140" rx="8" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect x="0" y="0" width="230" height="22" rx="8" fill="var(--ill-bar)"/>
+        <circle cx="14" cy="11" r="4" fill="#e5574b"/><circle cx="28" cy="11" r="4" fill="#e8b73c"/><circle cx="42" cy="11" r="4" fill="#4cbf6b"/>
+        <text x="115" y="70" fill="var(--ink)" font-size="16" text-anchor="middle" font-weight="700">OM Workspace</text>
+        <text x="115" y="94" fill="var(--muted)" font-size="12" text-anchor="middle">Internet ổn định</text>
+        <text x="115" y="112" fill="var(--muted)" font-size="12" text-anchor="middle">Tài khoản quản trị</text>
+        <path d="M-20,140 H250 L236,160 H-6 Z" fill="var(--ill-bar)"/>
+      </g>
+      <text x="145" y="222" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">Laptop cắm nguồn,</text>
+      <text x="145" y="240" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">không tự ngủ</text>
+      <!-- cable -->
+      <path d="M262,150 C330,150 330,150 400,150" stroke="var(--accent)" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <rect x="258" y="140" width="22" height="20" rx="3" fill="var(--ill-body2)"/>
+      <rect x="392" y="140" width="22" height="20" rx="3" fill="var(--ill-body2)"/>
+      <text x="335" y="132" fill="var(--accent)" font-size="13" text-anchor="middle" font-weight="700">CB-USB11 (dữ liệu)</text>
+      <text x="335" y="178" fill="var(--muted)" font-size="12" text-anchor="middle">USB-A ⇄ USB-C</text>
+      <!-- camera -->
+      <g transform="translate(410,60)">
+        <rect x="0" y="20" width="250" height="120" rx="14" fill="var(--ill-body)"/>
+        <rect x="14" y="0" width="70" height="30" rx="6" fill="var(--ill-body2)"/>
+        <circle cx="125" cy="85" r="42" fill="#11151e" stroke="#555e72" stroke-width="5"/>
+        <circle cx="125" cy="85" r="24" fill="#1c2438"/>
+        <circle cx="125" cy="85" r="8" fill="#3a4766"/>
+        <rect x="190" y="30" width="46" height="22" rx="4" fill="var(--ill-hl)"/>
+        <text x="213" y="46" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">E-M1 II</text>
+        <!-- battery -->
+        <rect x="18" y="104" width="64" height="26" rx="4" fill="none" stroke="var(--ill-ok)" stroke-width="2"/>
+        <rect x="21" y="107" width="58" height="20" rx="2" fill="var(--ill-ok)"/>
+        <text x="50" y="121" fill="#fff" font-size="11" text-anchor="middle" font-weight="700">BLH-1 100%</text>
+      </g>
+      <text x="535" y="222" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">Pin BLH-1 đầy</text>
+      <!-- SD cards removed -->
+      <g transform="translate(690,52)">
+        <path d="M0,0 H34 L44,10 V54 H0 Z" fill="var(--ill-body2)"/>
+        <text x="22" y="36" fill="#fff" font-size="11" text-anchor="middle" font-weight="700">SD</text>
+        <line x1="-4" y1="-4" x2="48" y2="58" stroke="var(--ill-hl)" stroke-width="4"/>
+        <line x1="48" y1="-4" x2="-4" y2="58" stroke="var(--ill-hl)" stroke-width="4"/>
+      </g>
+      <text x="712" y="140" fill="var(--ink)" font-size="13" text-anchor="middle" font-weight="700">Tháo cả 2 thẻ</text>
+      <text x="712" y="157" fill="var(--muted)" font-size="12" text-anchor="middle">(sao lưu trước)</text>
+    </svg>
+    <figcaption>Hình 2 — Chuẩn bị: laptop cắm nguồn, cáp dữ liệu, pin đầy, đã tháo thẻ SD.</figcaption>
+  </figure>
+</section>
+
+<!-- 3 -->
+<section id="b3">
+  <h2><span class="n">3</span>Cài OM Workspace và kết nối USB</h2>
+  <ol>
+    <li>Mở <a href="https://download.omsystem.com/pages/owdownload/en/index.html">trang tải chính thức</a>, kiểm tra hệ điều hành được hỗ trợ và nhập số sê-ri của máy ảnh nếu được yêu cầu. Trên <b>Windows</b>, chạy <code>OWSetup_64bit.exe</code>. Trên <b>macOS</b>, mở <code>OWSetup.dmg</code> và làm theo trình cài đặt.</li>
+    <li>Mở OM Workspace. Vào <b>Help → Update Software</b> để kiểm tra bản mới. Cập nhật ứng dụng hoặc cài lại từ trang tải chính thức nếu phiên bản quá cũ và không kết nối được máy chủ. <span class="src"><a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/download/software/">Ghi chú cập nhật</a></span></li>
+    <li>Khi máy ảnh đang tắt và đã tháo thẻ SD, nối cáp USB rồi bật máy ảnh. Trên LCD, dùng phím điều hướng chọn <b>Storage</b> và nhấn nút <kbd>OK</kbd> trên thân máy.</li>
+  </ol>
+  <div class="callout tip"><b>Mẹo:</b> Nếu menu USB không hiện, hãy ngắt kết nối, đặt <b>MENU → Custom Menu → D4 → USB Mode → Auto</b>, rồi kết nối lại trước khi chạy cập nhật. <span class="src"><a href="https://download.omsystem.com/pages/inst/em1m2/manual_em1m2_ENU.pdf">Sổ tay, trang 117 và 139</a></span></div>
+
+  <figure>
+    <svg viewBox="0 0 760 260" role="img" aria-label="Chọn Storage trên LCD máy ảnh khi nối USB">
+      <g transform="translate(30,30)">
+        <rect x="0" y="0" width="230" height="150" rx="8" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect x="0" y="0" width="230" height="22" rx="8" fill="var(--ill-bar)"/>
+        <text x="115" y="80" fill="var(--ink)" font-size="15" text-anchor="middle" font-weight="700">Máy tính</text>
+        <text x="115" y="102" fill="var(--muted)" font-size="12" text-anchor="middle">Mở OM Workspace</text>
+        <text x="115" y="120" fill="var(--muted)" font-size="12" text-anchor="middle">Đang chờ camera…</text>
+      </g>
+      <path d="M262,105 H340" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+      <text x="300" y="90" fill="var(--accent)" font-size="13" text-anchor="middle" font-weight="700">USB</text>
+      <g transform="translate(345,30)">
+        <rect width="380" height="190" rx="14" fill="var(--ill-body)"/>
+        <rect x="20" y="20" width="250" height="150" rx="8" fill="var(--ill-screen)"/>
+        <text x="145" y="46" fill="var(--ill-text)" font-size="13" text-anchor="middle" font-weight="700">USB</text>
+        <rect x="34" y="58" width="222" height="28" rx="5" fill="var(--ill-hl)"/>
+        <text x="48" y="77" fill="#fff" font-size="14" font-weight="700">Storage</text>
+        <rect x="34" y="90" width="222" height="26" rx="5" fill="#2e3850"/>
+        <text x="48" y="108" fill="var(--ill-text)" font-size="13">MTP</text>
+        <rect x="34" y="120" width="222" height="26" rx="5" fill="#2e3850"/>
+        <text x="48" y="138" fill="var(--ill-text)" font-size="13">Control</text>
+        <!-- OK button -->
+        <circle cx="325" cy="95" r="38" fill="var(--ill-body2)"/>
+        <circle cx="325" cy="95" r="17" fill="var(--ill-hl)"/>
+        <text x="325" y="100" fill="#fff" font-size="12" text-anchor="middle" font-weight="700">OK</text>
+        <text x="325" y="152" fill="#aab3c7" font-size="11" text-anchor="middle">phím điều hướng</text>
+      </g>
+      <text x="535" y="242" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">Chọn Storage → nhấn OK trên thân máy</text>
+    </svg>
+    <figcaption>Hình 3 — Nối USB, bật máy, chọn <b>Storage</b> rồi nhấn <b>OK</b>.</figcaption>
+  </figure>
+</section>
+
+<!-- 4 -->
+<section id="b4">
+  <h2><span class="n">4</span>Tạo tệp sao lưu cài đặt riêng nếu cần</h2>
+  <p>E-M1 Mark II hỗ trợ lưu cài đặt ra tệp riêng trên máy tính. Dùng chế độ USB <b>Storage</b> cho cả hai thao tác. <span class="src"><a href="https://digital-faq.jp.omsystem.com/faq/public/app/servlet/qadoc?QID=006722">Tính năng sao lưu</a></span></p>
+  <ul>
+    <li><b>Lưu trước khi cập nhật.</b> Mở <b>Camera → Custom Settings → Save</b>. Chọn <b>Next</b>, chọn các nhóm cần lưu rồi chọn <b>Next</b>. Chọn nơi lưu và tên tệp, nhấn <b>Save</b> rồi <b>Close</b>. <span class="src"><a href="https://explore.omsystem.com/c/en/how-to-download-settings-in-your-camera">Các bước lưu tệp</a></span></li>
+    <li><b>Nạp lại từ tệp sau khi cập nhật nếu cần.</b> Chọn <b>Camera → Custom Settings → Load</b> rồi <b>Next</b>. Chọn <b>Load from File</b> rồi <b>Next</b>. Mở tệp, kiểm tra model và số sê-ri, chọn các thiết lập cần nạp rồi nhấn <b>Load</b>. Giữ nguyên cáp và nguồn, chờ máy ảnh tự khởi động lại rồi chọn <b>Close</b>. <span class="src"><a href="https://digital-faq.jp.omsystem.com/faq/public/app/servlet/qadoc?QID=006722">Các bước nạp tệp</a></span></li>
+  </ul>
+
+  <figure>
+    <svg viewBox="0 0 760 230" role="img" aria-label="Luồng lưu và nạp cài đặt trong OM Workspace">
+      <defs><marker id="ar2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <g font-size="13">
+        <rect x="20" y="20" width="340" height="190" rx="10" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect x="20" y="20" width="340" height="26" rx="10" fill="var(--ill-bar)"/>
+        <text x="190" y="38" fill="var(--ink)" text-anchor="middle" font-weight="700">TRƯỚC khi cập nhật — Save</text>
+        <text x="40" y="76" fill="var(--ink)">Camera → Custom Settings → <tspan font-weight="700">Save</tspan></text>
+        <rect x="40" y="90" width="90" height="26" rx="13" fill="var(--ill-bar)"/><text x="85" y="108" fill="var(--ink)" text-anchor="middle">Next</text>
+        <text x="140" y="108" fill="var(--muted)">chọn nhóm cần lưu</text>
+        <rect x="40" y="126" width="90" height="26" rx="13" fill="var(--ill-bar)"/><text x="85" y="144" fill="var(--ink)" text-anchor="middle">Next</text>
+        <text x="140" y="144" fill="var(--muted)">chọn nơi lưu, đặt tên</text>
+        <rect x="40" y="162" width="90" height="26" rx="13" fill="var(--ill-hl)"/><text x="85" y="180" fill="#fff" text-anchor="middle" font-weight="700">Save</text>
+        <rect x="140" y="162" width="90" height="26" rx="13" fill="var(--ill-bar)"/><text x="185" y="180" fill="var(--ink)" text-anchor="middle">Close</text>
+      </g>
+      <g font-size="13">
+        <rect x="400" y="20" width="340" height="190" rx="10" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect x="400" y="20" width="340" height="26" rx="10" fill="var(--ill-bar)"/>
+        <text x="570" y="38" fill="var(--ink)" text-anchor="middle" font-weight="700">SAU khi cập nhật — Load (nếu cần)</text>
+        <text x="420" y="76" fill="var(--ink)">Camera → Custom Settings → <tspan font-weight="700">Load</tspan></text>
+        <rect x="420" y="90" width="90" height="26" rx="13" fill="var(--ill-bar)"/><text x="465" y="108" fill="var(--ink)" text-anchor="middle">Next</text>
+        <text x="520" y="108" fill="var(--muted)">Load from File</text>
+        <rect x="420" y="126" width="90" height="26" rx="13" fill="var(--ill-bar)"/><text x="465" y="144" fill="var(--ink)" text-anchor="middle">Next</text>
+        <text x="520" y="144" fill="var(--muted)">kiểm tra model + sê-ri</text>
+        <rect x="420" y="162" width="90" height="26" rx="13" fill="var(--ill-hl)"/><text x="465" y="180" fill="#fff" text-anchor="middle" font-weight="700">Load</text>
+        <text x="520" y="180" fill="var(--muted)">giữ cáp, chờ máy khởi động lại</text>
+      </g>
+    </svg>
+    <figcaption>Hình 4 — Hai thao tác sao lưu và nạp lại cài đặt (minh họa các nút chính).</figcaption>
+  </figure>
+</section>
+
+<!-- 5 -->
+<section id="b5">
+  <h2><span class="n">5</span>Tải và ghi firmware</h2>
+  <ol>
+    <li>Trong OM Workspace, chọn <b>Camera → Update</b>. Trên Windows, chọn <b>Yes</b> nếu hộp thoại <b>User Account Control</b> xuất hiện. Trên macOS, nếu được yêu cầu, hãy cài và cho phép trình điều khiển máy ảnh của <b>OM Digital Solutions</b> theo chỉ dẫn của hãng. Nếu cần khởi động lại Mac, làm ngay ở bước này rồi mở lại OM Workspace. Khi cửa sổ cập nhật đã sẵn sàng, đọc các lưu ý và chọn <b>Next</b> để kiểm tra phiên bản qua Internet. <span class="src"><a href="https://explore.omsystem.com/gb/en/firmware-update-instructions-mac">Hướng dẫn driver Mac Apple silicon</a></span></li>
+    <li>Xác nhận dòng <b>E-M1 Mark II</b> thuộc về thân máy, kiểm tra phiên bản hiện tại và phiên bản được đề xuất. Chọn <b>Details</b> nếu muốn xem thay đổi. Nếu ứng dụng báo đã dùng firmware mới nhất, dừng tại đây.</li>
+    <li>Chọn <b>Update</b>, đọc cảnh báo và xác nhận <b>Yes</b>. Đọc điều khoản sử dụng rồi chọn <b>Agree</b> nếu đồng ý.</li>
+    <li>Ở hộp thoại sao lưu, chọn <b>OK</b> để OM Workspace lưu cài đặt máy ảnh vào máy tính. Sau đó phần mềm tải và chuyển firmware. LCD có thể tạm thời không hiển thị nội dung ở giai đoạn lưu cài đặt hoặc truyền tệp. Theo dõi tiến độ trên máy tính.</li>
+    <li>Khi LCD hiện biểu tượng đang ghi firmware, chờ đến lúc chính <b>LCD của máy ảnh</b> hiện <code>OK</code>. Giữ nguyên cáp và nguồn điện, không dùng nút điều khiển, không mở nắp pin và không đóng trình cập nhật. Nếu thanh tiến độ trên máy tính đã đầy, vẫn chờ <code>OK</code> trên máy ảnh.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 760 330" role="img" aria-label="Các màn hình của OM Workspace khi cập nhật firmware">
+      <defs><marker id="ar3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <!-- window 1 -->
+      <g transform="translate(14,14)" font-size="12">
+        <rect width="228" height="250" rx="8" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect width="228" height="22" rx="8" fill="var(--ill-bar)"/>
+        <text x="10" y="15" fill="var(--ink)" font-size="11" font-weight="700">OM Workspace</text>
+        <text x="12" y="44" fill="var(--ink)" font-weight="700">Camera ▾</text>
+        <rect x="12" y="50" width="120" height="70" rx="4" fill="var(--ill-bg)" stroke="var(--line)"/>
+        <text x="20" y="68" fill="var(--muted)">Custom Settings</text>
+        <rect x="14" y="76" width="116" height="22" rx="3" fill="var(--ill-hl)"/>
+        <text x="20" y="91" fill="#fff" font-weight="700">Update</text>
+        <text x="20" y="114" fill="var(--muted)">…</text>
+        <text x="12" y="150" fill="var(--ink)" font-weight="700">UAC (Windows):</text>
+        <rect x="12" y="158" width="60" height="24" rx="4" fill="var(--ill-hl)"/>
+        <text x="42" y="174" fill="#fff" text-anchor="middle" font-weight="700">Yes</text>
+        <text x="12" y="206" fill="var(--muted)">Đọc lưu ý → </text>
+        <rect x="80" y="192" width="64" height="20" rx="10" fill="var(--ill-bar)"/>
+        <text x="112" y="206" fill="var(--ink)" text-anchor="middle">Next</text>
+      </g>
+      <text x="128" y="285" fill="var(--ink)" font-size="13" text-anchor="middle" font-weight="700">① Camera → Update</text>
+      <line x1="246" y1="140" x2="262" y2="140" stroke="var(--accent)" stroke-width="3" marker-end="url(#ar3)"/>
+      <!-- window 2 -->
+      <g transform="translate(266,14)" font-size="12">
+        <rect width="228" height="250" rx="8" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect width="228" height="22" rx="8" fill="var(--ill-bar)"/>
+        <text x="10" y="15" fill="var(--ink)" font-size="11" font-weight="700">Camera Update</text>
+        <text x="12" y="44" fill="var(--ink)" font-weight="700">E-M1 Mark II</text>
+        <text x="12" y="64" fill="var(--muted)">Hiện tại:</text><text x="216" y="64" fill="var(--ink)" text-anchor="end">Body 3.x</text>
+        <text x="12" y="84" fill="var(--muted)">Đề xuất:</text><text x="216" y="84" fill="var(--ok)" text-anchor="end" font-weight="700">Body 3.7</text>
+        <rect x="12" y="98" width="72" height="22" rx="11" fill="var(--ill-bar)"/>
+        <text x="48" y="113" fill="var(--ink)" text-anchor="middle">Details</text>
+        <rect x="12" y="140" width="90" height="26" rx="13" fill="var(--ill-hl)"/>
+        <text x="57" y="157" fill="#fff" text-anchor="middle" font-weight="700">Update</text>
+        <text x="12" y="188" fill="var(--muted)">Cảnh báo → Yes</text>
+        <text x="12" y="206" fill="var(--muted)">Điều khoản → Agree</text>
+        <text x="12" y="228" fill="var(--muted)">Hộp thoại sao lưu → OK</text>
+      </g>
+      <text x="380" y="285" fill="var(--ink)" font-size="13" text-anchor="middle" font-weight="700">② Chọn đúng model, Update</text>
+      <line x1="498" y1="140" x2="514" y2="140" stroke="var(--accent)" stroke-width="3" marker-end="url(#ar3)"/>
+      <!-- window 3 progress -->
+      <g transform="translate(518,14)" font-size="12">
+        <rect width="228" height="250" rx="8" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect width="228" height="22" rx="8" fill="var(--ill-bar)"/>
+        <text x="10" y="15" fill="var(--ink)" font-size="11" font-weight="700">Đang cập nhật…</text>
+        <text x="12" y="48" fill="var(--ink)">Lưu cài đặt → Tải → Ghi</text>
+        <rect x="12" y="60" width="204" height="14" rx="7" fill="var(--ill-bar)"/>
+        <rect x="12" y="60" width="150" height="14" rx="7" fill="var(--ill-ok)"/>
+        <text x="12" y="100" fill="var(--danger)" font-weight="700">KHÔNG:</text>
+        <text x="12" y="118" fill="var(--muted)">• rút cáp / ngắt nguồn</text>
+        <text x="12" y="134" fill="var(--muted)">• bấm nút trên máy</text>
+        <text x="12" y="150" fill="var(--muted)">• mở nắp pin</text>
+        <text x="12" y="166" fill="var(--muted)">• đóng trình cập nhật</text>
+        <rect x="12" y="186" width="204" height="48" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/>
+        <text x="114" y="206" fill="var(--warn)" text-anchor="middle" font-weight="700">Thanh đầy vẫn chưa xong!</text>
+        <text x="114" y="222" fill="var(--warn)" text-anchor="middle">Chờ LCD máy ảnh hiện OK</text>
+      </g>
+      <text x="632" y="285" fill="var(--ink)" font-size="13" text-anchor="middle" font-weight="700">③ Theo dõi tiến độ</text>
+      <text x="380" y="315" fill="var(--muted)" font-size="12" text-anchor="middle">LCD máy có thể trống trong lúc lưu cài đặt / truyền tệp — vẫn bình thường.</text>
+    </svg>
+    <figcaption>Hình 5 — Ba giai đoạn trong OM Workspace (minh họa; giao diện thật tùy phiên bản phần mềm).</figcaption>
+  </figure>
+</section>
+
+<!-- 6 -->
+<section id="b6">
+  <h2><span class="n">6</span>Khởi động lại khi LCD hiện <code>OK</code></h2>
+  <ol>
+    <li>Xác nhận LCD máy ảnh đã hiện <code>OK</code> và <b>giữ nguyên cáp USB ở cả hai đầu</b>.</li>
+    <li>Dùng công tắc nguồn trên máy ảnh để tắt rồi bật lại khi USB vẫn đang cắm. Nếu trước đây bạn gán bật/tắt nguồn cho cần <b>Fn</b>, dùng cần này khi công tắc nguồn không phản hồi.</li>
+    <li>Trở về cửa sổ OM Workspace, đánh dấu <b>cả hai ô</b> xác nhận đã cập nhật xong và đã tắt rồi bật máy ảnh. Chọn <b>Next</b> và chờ ứng dụng nạp lại cài đặt đã lưu.</li>
+    <li>Khi OM Workspace báo hoàn tất, chọn <b>Close</b>, sau đó ngắt cáp USB.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 760 250" role="img" aria-label="LCD hiện OK, tắt bật máy khi cáp USB còn cắm, rồi đánh dấu hai ô trên OM Workspace">
+      <defs><marker id="ar4" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+      <!-- cam LCD OK -->
+      <g transform="translate(16,16)">
+        <rect width="200" height="150" rx="12" fill="var(--ill-body)"/>
+        <rect x="16" y="16" width="168" height="100" rx="6" fill="var(--ill-screen)"/>
+        <text x="100" y="82" fill="var(--ill-ok)" font-size="40" text-anchor="middle" font-weight="800">OK</text>
+        <rect x="70" y="122" width="60" height="14" rx="3" fill="var(--ill-body2)"/>
+      </g>
+      <text x="116" y="196" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">① LCD máy hiện OK</text>
+      <text x="116" y="214" fill="var(--muted)" font-size="12" text-anchor="middle">giữ nguyên cáp USB</text>
+      <line x1="224" y1="90" x2="256" y2="90" stroke="var(--accent)" stroke-width="3" marker-end="url(#ar4)"/>
+      <!-- power switch -->
+      <g transform="translate(262,16)">
+        <rect width="200" height="150" rx="12" fill="var(--ill-bg)" stroke="var(--line)" stroke-width="2"/>
+        <rect x="30" y="50" width="140" height="44" rx="22" fill="var(--ill-bar)"/>
+        <circle cx="146" cy="72" r="18" fill="var(--ill-hl)"/>
+        <text x="60" y="78" fill="var(--ink)" font-size="14" font-weight="700">OFF</text>
+        <text x="100" y="124" fill="var(--ink)" font-size="13" text-anchor="middle">Tắt → Bật lại</text>
+        <text x="100" y="30" fill="var(--muted)" font-size="12" text-anchor="middle">USB vẫn cắm</text>
+      </g>
+      <text x="362" y="196" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">② Tắt rồi bật máy</text>
+      <text x="362" y="214" fill="var(--muted)" font-size="12" text-anchor="middle">hoặc cần Fn nếu đã gán</text>
+      <line x1="470" y1="90" x2="502" y2="90" stroke="var(--accent)" stroke-width="3" marker-end="url(#ar4)"/>
+      <!-- OM Workspace confirm -->
+      <g transform="translate(508,16)" font-size="12">
+        <rect width="236" height="150" rx="8" fill="var(--ill-win)" stroke="var(--line)" stroke-width="2"/>
+        <rect width="236" height="22" rx="8" fill="var(--ill-bar)"/>
+        <text x="10" y="15" fill="var(--ink)" font-size="11" font-weight="700">OM Workspace</text>
+        <rect x="14" y="38" width="14" height="14" rx="3" fill="var(--ill-ok)"/><text x="19" y="49" fill="#fff" font-size="11" font-weight="700">✓</text>
+        <text x="36" y="50" fill="var(--ink)">Đã cập nhật xong</text>
+        <rect x="14" y="62" width="14" height="14" rx="3" fill="var(--ill-ok)"/><text x="19" y="73" fill="#fff" font-size="11" font-weight="700">✓</text>
+        <text x="36" y="74" fill="var(--ink)">Đã tắt rồi bật máy ảnh</text>
+        <rect x="14" y="96" width="76" height="26" rx="13" fill="var(--ill-hl)"/>
+        <text x="52" y="113" fill="#fff" text-anchor="middle" font-weight="700">Next</text>
+        <text x="100" y="113" fill="var(--muted)">→ nạp lại cài đặt → Close</text>
+      </g>
+      <text x="626" y="196" fill="var(--ink)" font-size="14" text-anchor="middle" font-weight="700">③ Đánh dấu 2 ô → Next</text>
+      <text x="626" y="214" fill="var(--muted)" font-size="12" text-anchor="middle">xong mới ngắt cáp USB</text>
+    </svg>
+    <figcaption>Hình 6 — Giữ cáp USB suốt bước khởi động lại; chỉ rút cáp sau khi OM Workspace báo hoàn tất và bạn bấm <b>Close</b>.</figcaption>
+  </figure>
+</section>
+
+<!-- 7 -->
+<section id="b7">
+  <h2><span class="n">7</span>Kiểm tra sau cập nhật</h2>
+  <ol>
+    <li>Vào lại <b>MENU → Setup Menu → Firmware</b> và kiểm tra <b>Body</b> hiện <b>3.7</b>, hoặc đúng phiên bản đã được OM Workspace cung cấp nếu OM System phát hành bản mới.</li>
+    <li>Kiểm tra ngày giờ, ngôn ngữ, C1/C2/C3 và các thiết lập đã ghi lại. Cài lại những mục bị đặt về mặc định, hoặc dùng tệp sao lưu riêng nếu có và cần nạp lại.</li>
+    <li>Tắt máy, lắp lại thẻ SD và ống kính nếu đã tháo. Bật lại, chụp một ảnh, kiểm tra lấy nét và mở lại ảnh vừa chụp. Nếu thường quay video hoặc dùng hai thẻ, quay một đoạn ngắn và kiểm tra máy đang ghi vào đúng khe.</li>
+  </ol>
+  <div class="callout ok"><b>Hoàn tất.</b> Khi <b>Body</b> hiển thị đúng phiên bản và máy chụp/quay bình thường, quá trình cập nhật đã xong.</div>
+</section>
+
+<!-- loi -->
+<section id="loi">
+  <h2>Xử lý lỗi thường gặp</h2>
+  <table>
+    <thead><tr><th style="width:32%">Hiện tượng</th><th>Cách xử lý</th></tr></thead>
+    <tbody>
+      <tr><td><b>Camera → Update</b> không nhận máy, trước khi bắt đầu cập nhật</td><td>Kiểm tra pin và trạng thái nguồn. Nối lại bằng cáp dữ liệu cắm trực tiếp, chọn <b>Storage</b> rồi nhấn <b>OK</b>. Kiểm tra <b>USB Mode → Auto</b> nếu menu USB không hiện. Thử cổng hoặc cáp dữ liệu khác nếu cần.</td></tr>
+      <tr><td>OM Workspace báo lỗi kết nối máy chủ trước khi truyền firmware</td><td>Kiểm tra kết nối Internet và phiên bản OM Workspace. Mở lại trình cập nhật sau khi xác nhận thao tác trước đã dừng và máy ảnh chưa bắt đầu ghi firmware.</td></tr>
+      <tr><td>Mac nhận máy ảnh như thiết bị lưu trữ nhưng OM Workspace báo <b>Failed to communicate with the camera</b></td><td>Kiểm tra trình điều khiển OM Digital Solutions và quyền cho tiện ích hệ thống. Một số Mac Apple silicon có thể cần cài đặt bảo mật <b>Reduced Security</b> để bật trình điều khiển. Thực hiện theo <a href="https://explore.omsystem.com/gb/en/firmware-update-instructions-mac">hướng dẫn macOS của OM System</a> trước khi thử lại.</td></tr>
+      <tr><td>LCD trống trong lúc lưu cài đặt hoặc chuyển firmware</td><td>Theo dõi tiến độ trên máy tính và giữ nguyên nguồn, cáp. Chờ máy ảnh hiển thị biểu tượng đang ghi rồi <code>OK</code>.</td></tr>
+      <tr><td>LCD đã hiện <code>OK</code> nhưng <b>Next</b> còn mờ</td><td>Giữ nguyên USB, tắt rồi bật máy ảnh và đánh dấu đủ hai ô xác nhận. Dùng cần <b>Fn</b> nếu công tắc nguồn đã được gán sang cần này.</td></tr>
+      <tr><td>Trình cập nhật báo lỗi khi đang ghi, máy chưa hiện <code>OK</code> hoặc không khởi động sau sự cố</td><td>Nếu máy còn đang cập nhật hoặc trạng thái chưa rõ, giữ nguồn và kết nối hiện có. Ghi lại nội dung lỗi, phiên bản và trạng thái LCD, rồi liên hệ bộ phận hỗ trợ camera hoặc trung tâm dịch vụ tại khu vực của bạn. <a href="https://explore.omsystem.com/c/en/contact-us">Liên hệ OM System</a></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ep7 -->
+<section id="ep7">
+  <h2>Nếu bạn có PEN E-P7 và cần lên firmware chính thức 1.1</h2>
+  <p>Kiểm tra <b>MENU → Setup → Firmware</b>. Nếu thân máy đang chạy bản chính thức cũ hơn <b>1.1</b>, ghi lại cài đặt quan trọng, tháo thẻ SD và dùng cáp dữ liệu của PEN E-P7 (<b>CB-USB12</b>, đầu USB Micro-B phía máy ảnh). Kết nối USB ở chế độ <b>Storage</b>, vào <b>Camera → Update</b> và chọn firmware <b>E-P7 1.1</b>. Chờ LCD hiện <code>OK</code>, chọn <b>Next</b> trên OM Workspace, rút cáp USB, tắt máy ảnh rồi chọn <b>Close</b>. PEN E-P7 dùng quy trình <b>không</b> tự sao lưu và nạp lại cài đặt. Bật máy lại để xác nhận <b>Body 1.1</b>. Nếu máy đã có bản chính thức <b>1.1</b>, bỏ qua bước cập nhật này.
+  <span class="src"><a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/download/software/firm/e1/">Phiên bản firmware E-P7</a> · <a href="https://support.jp.omsystem.com/jp/support/cs/pen/acce/pen_usb.html">Cáp USB E-P7</a> · <a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/qa/contents/ow/ow_a2.html">Quy trình chính thức cho máy không có bước sao lưu</a></span></p>
+  <p>Nếu mục tiêu là cài bản sửa đổi Caduceus, tiếp tục sau khi đã xác nhận <b>PEN E-P7</b> chạy firmware chính thức <b>1.1</b>. <a href="./huong-dan-cap-nhat-firmware.md">Hướng dẫn cài và cập nhật Caduceus cho PEN E-P7</a></p>
+</section>
+
+</div>
+<script>
+(function(){
+  var b=document.getElementById('theme'),r=document.documentElement;
+  try{var s=localStorage.getItem('fw-theme');if(s)r.setAttribute('data-theme',s);}catch(e){}
+  b.addEventListener('click',function(){
+    var dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+    var n=dark?'light':'dark';r.setAttribute('data-theme',n);
+    try{localStorage.setItem('fw-theme',n);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

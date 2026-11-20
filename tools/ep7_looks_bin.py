@@ -266,7 +266,8 @@ def main():
                 n = (len(data) - HDR_LEN) // REC_LEN
                 for j in range(n):
                     r = rec(data, j)
-                    print(f'  {j:2d} {r[NAME_OFF:NAME_OFF + 16].split(b"\0")[0].decode():15s} '
+                    name = r[NAME_OFF:NAME_OFF + NAME_LEN].split(b'\0', 1)[0].decode()
+                    print(f'  {j:2d} {name:15s} '
                           f'{"mono" if r[CLASS_OFF] else "colour"} slots {"C" if r[MASK_OFF] & 1 else "-"}{"M" if r[MASK_OFF] & 2 else "-"}')
             if a.slots_file:
                 ok, eff = check_slots(a.slots_file.read_bytes(), data)

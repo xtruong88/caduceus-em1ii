@@ -1,0 +1,3 @@
+# Release metadata is hashed byte-for-byte, including line endings.
+releases/**/edits.json text eol=lf
+releases/**/build.json text eol=lf
