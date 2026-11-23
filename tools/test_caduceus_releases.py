@@ -1,13 +1,16 @@
 """Regression checks for published and locally generated release manifests."""
 
+from contextlib import redirect_stdout
+import io
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
+import zlib
 
 from caduceus import (
-    EM1MK2_CATALOG_STOCK_SHA, Refuse, cmd_verify, get_camera, latest_release, load_release,
-    release_package_hashes, release_stock_hash, releases, vkey,
+    EM1MK2_CATALOG_STOCK_SHA, Refuse, cmd_verify, copy_to_card, em1mk2_looks_ok, get_camera, latest_release,
+    load_release, release_package_hashes, release_stock_hash, releases, vkey,
 )
 
 
@@ -42,6 +45,31 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(catalog_card, legacy_card)
         self.assertEqual(cam.stock_sha, EM1MK2_CATALOG_STOCK_SHA)
         self.assertEqual(sums['restore-stock.pkg.bin'], cam.stock_sha)
+
+    def test_em1_card_copy_keeps_only_a_pack_the_camera_can_read(self):
+        _, _, card, cam = load_release('v0.4c17', 'em1mk2')
+        bundled = card[f'{cam.mod_dir}/LOOKS.BIN']
+        self.assertTrue(em1mk2_looks_ok(bundled))
+        damaged = bytearray(bundled)
+        damaged[-1] ^= 1
+        legacy_em1b = b'EM1B' + bytes(2076)            # the retired v0.1-v0.3 file, 2,080 bytes
+        user_pack = bytearray(bundled[:64 + 64])       # a valid one-look pack that differs from the bundled one
+        user_pack[12:16] = (64).to_bytes(4, 'little')
+        user_pack[24:26] = (1).to_bytes(2, 'little')
+        user_pack[16:20] = (zlib.crc32(bytes(user_pack[:16] + user_pack[20:])) & 0xffffffff).to_bytes(4, 'little')
+        self.assertTrue(em1mk2_looks_ok(bytes(user_pack)))
+        for existing, kept in ((bytes(user_pack), True), (bytes(damaged), False), (legacy_em1b, False)):
+            with self.subTest(size=len(existing), kept=kept), TemporaryDirectory() as tmp:
+                build, sd = Path(tmp, 'build'), Path(tmp, 'sd')
+                (build / 'DCOLYMP').mkdir(parents=True)
+                (build / 'DCOLYMP' / cam.card_name).write_bytes(b'update')
+                (build / cam.mod_dir).mkdir()
+                (build / cam.mod_dir / 'LOOKS.BIN').write_bytes(bundled)
+                (sd / cam.mod_dir).mkdir(parents=True)
+                (sd / cam.mod_dir / 'LOOKS.BIN').write_bytes(existing)
+                with redirect_stdout(io.StringIO()):
+                    copy_to_card(build, sd, cam)
+                self.assertEqual((sd / cam.mod_dir / 'LOOKS.BIN').read_bytes(), existing if kept else bundled)
 
     def test_accepts_camera_and_legacy_package_names(self):
         for release, camera, patched_key in (

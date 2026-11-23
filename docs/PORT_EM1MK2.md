@@ -142,6 +142,69 @@ The E-P7 and PEN-F have COLOR/MONO picture modes, a front Profile Control dial a
 
 ---
 
+### 5. Sharpness as a linear scale (`sharp_scale`, test release v0.4c19t)
+
+**Status: emulator-checked, not camera-tested.** v0.4c19t = v0.4c17 + this patch (no halation).
+
+Sharpness −2..+2 becomes off / 25 % / 50 % / 75 % / 100 %, where 100 % is stock +2. The idea comes from the
+E-M1 III mod (dfeldt91-blip/E-M1-Miii, `sharp_scale`; it has no license, so only the idea is reused, the stub is written
+here). Settings, menus and EXIF keep the −2..+2 values. Flat and Log jobs (keys 2000 / 2001) stay stock.
+
+**Where the gain comes from [V].** The ISP sharpening-gain helper `0x603e8b..0x603e8c97` has the E-P7's shape
+(`0x603ab8fe`, `docs/SHARPENING_OFF.md`):
+- Index = base[class] + Sharpness, where Sharpness is the signed byte at request +1795.
+  - The base tables are `0x6052a940` (6,5,4,4,6,7) and the alternate `0x6052a946` (5,5,4,4,5,6).
+  - Flat/Log take Sharpness + 4 on the main path.
+  - The index is clamped to 0..10.
+- Gain = u16 table (`0x6052a94c` = 0,16,64,112,184,256…, or `0x6052aaca` when +1810/+1811 is set) × ISO amount / 256, capped at 255. Then it is scaled again by d2 / 256 and capped.
+- The final byte is stored at output +2.
+
+The other users of these tables (`0x603d42af`.. in five functions) only copy them into a record.
+`0x603e06ff` is a second index helper with its own tables (`0x60521aa8`; multiplier 256 up to index 5, rising above).
+It is not touched. At −2..0 it stays at 256 for most classes [I].
+
+**Patch** (`patches/omdem1mk2/sharp_scale/`, `ss.s`, 94 B at `0x605d2f94..0x605d2ff2`):
+
+| Site | Stock | Now |
+|---|---|---|
+| `0x603e8bfa` | `movbu (1795,a0),d1; extb d1` | `jmp ss_index`: index uses Sharpness +2 (Flat/Log: real Sharpness) |
+| `0x603e8c83` | `mov (40,sp),a0; movbu (50,sp),d0` | `jmp ss_scale`: gain × (S+2)/4 (k ≤ 0 → 0, 1 → /4, 2 → /2, 3 → ×3/4, ≥ 4 → stock) |
+
+- Code sits in the Section 3 tail, after the aspect AF/AE stubs. `build.py` refuses to build if they overlap.
+- No mul/div (audit rule), no stores outside the stack frame.
+- Neither hooked range is a branch target inside the helper.
+
+**Emulated** (`tools/omdem1mk2_emu_sharp_scale.py`, 3,780 runs, part of the v0.4c19t seal): the helper tail runs from
+`0x603e8bb6` to its `ret`. Inputs cover Sharpness −3..+3, classes 0..5, both base tables, all three gain tables, three
+ISO amounts, and keys 11 / 2 / 1 / 2000 / 2001.
+- Stock output matches a Python model of the code.
+- Patched output = stock(+2) scaled as above.
+- Flat/Log are unchanged (1,512 runs).
+
+Example (class 1, amount 37):
+
+| Sharpness | −2 | −1 | 0 | +1 | +2 |
+|---|---|---|---|---|---|
+| Stock gain | 16 | 26 | 37 | 37 | 37 |
+| Patched gain | 0 | 9 | 18 | 27 | 37 |
+
+Stock −2 keeps about 43 % of the gain. Stock +1 and +2 saturate to the same value, as on the E-P7.
+
+**Not emulated / unproven:**
+- The callers of the helper (live view vs capture vs movie).
+- That the gain reaches the JPEG and the movie.
+- The resize path.
+- The `0x603e06ff` multiplier.
+- How playback and EXIF show the value.
+
+**Camera checks for v0.4c19t:**
+1. Shoot a tripod scene with fine text, ISO 200, Natural, at Sharpness −2, 0 and +2.
+   - −2 must look softer than stock −2, with no halo.
+   - +2 must match stock +2.
+2. Repeat at ISO 3200 and in Vivid.
+3. Record a movie in Flat at −2 and at +2: it must look like stock.
+4. Play back each shot and cycle the INFO pages: the camera must not hang.
+
 ## 3. Building & Testing
 
 Use **v0.4c17** for the OM catalog E-M1 Mark II 3.70 package. This is an emulator-checked test release awaiting camera validation.
@@ -168,6 +231,16 @@ AF, SD look loading, recording limits and the focus-stacking branch. Camera star
 behavior and rendered photos still need camera testing. v0.4c17 also checks card loading before and after
 opening Color Creator. If `C1` first appears while the editor is open, reopen Color Creator to switch to
 the first card look. Until then, the editor and SCP label continue to show the active built-in look.
+
+**Why the catalog stock loads less (static, 2026-11-20).** The two 3.70 files differ in Section 1 content, not only
+in its end word. In `f0c25dd8…` a function started at `0x60256ff0` after linker padding and ran to about `0x60257578`
+(end word `0x60257800`). In `691a8a8e…` everything from `0x60256ce8` is `0xFF` and the end word is `0x60257000`: OM
+dropped that function and the linker rounded the section end down. In the catalog image nothing uses
+`0x60256ce8..0x602577ff`: the only 32-bit value in `0x60257000..0x60257fff` (cached, uncached `0xa…` and `0x8…`
+aliases) that is an instruction operand is the end word `0x60042b4d` itself, and no relative `call`/`jmp`/`calls`
+targets the range (the five byte-pattern hits are inside `mov imm32` operands or ASCII / string-pointer tables). So
+loading the 2 KiB again overwrites only padding. Still unproven: that no code computes an address there at run time
+(the camera boot + 65:24 test).
 
 The release was sealed with `python3 tools/omdem1mk2_catalog_release.py --stock PATH --version v0.4c17` after
 rebuilding the wheel edits with `python3 patches/omdem1mk2/color_creator_wheel/build.py`. The sealer uses the MN103

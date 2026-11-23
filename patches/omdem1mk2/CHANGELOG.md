@@ -5,6 +5,69 @@ Container update package: `E1259999.BIN` (93,050,944 bytes) installed via `DCOLY
 
 ---
 
+## v0.4c24 — 2026-11-23 (halation release candidate; emulator-checked, not camera-tested)
+
+- v0.4c23t with the strength taken from the Color Creator **Halo** page (Off / Low / Med / High, sid 961). It starts at
+  **Off** (the setting's default; stock never writes it), so right after flashing photos match v0.4c17 until Halo is
+  turned on. A stored value outside 0..3 counts as Off.
+- Flash it only after v0.4c22t and v0.4c23t have passed on the camera (`docs/OMD-EM1-II/thu-may-halation.md`).
+- Emulator: every v0.4c23t check, plus the stage read from sid 961 through the real settings store (`emu_halation_flag`
+  without a forced stage, tint cases included), `emu_spare_setting` on this spec, and the route / pass / combiner checks
+  on this image with only hl_flag's own getter call fixed to Med (`emu_halation_route --stage-setting`).
+
+## v0.4c23t — 2026-11-23 (halation glow camera-test build; emulator-checked, not camera-tested)
+
+- **First build that should show halation.** Vivid / Natural / Color Creator stills get a tinted glow around bright
+  highlights, at Med strength (stage fixed at 2 in this test build). The colour comes from the active look (red for
+  every built-in look; card looks may choose amber, warm or cool).
+- **Only the two emulated ordinary-still capture kinds (0x1000 / 0x1001) are touched.** Every other kind (High Res,
+  HDR, bracketing, Live Composite and the rest), Monotone, Art Filters and Art Effects stay stock, and so does any
+  job the constructor sends to another builder: the Soft Focus flag is set only at the hooked colour-builder call.
+- Marked stills develop through the Soft Focus Art route with a neutral blend, so they take about as long as a Soft
+  Focus Art Filter shot plus the glow pass (estimated 0.2–0.3 s without lights, about 4–8 s on a night scene).
+- The hardware watchdog limit is raised from 10 s to 30 s (both run-time settings), as on E-P7 v0.31b, so a long save
+  can't restart the camera. A real hang now restarts after up to 30 s instead of 10 s.
+- Color Creator has a fifth page, **Halo Off / Low / Med / High** (INFO steps pages). It stores the setting, but in this
+  build the strength stays at Med whatever it shows; the page is here to test the control.
+- v0.4c17 otherwise. To go back, flash v0.4c17 or the stock restore file.
+- Emulator: route, blend, pass (36 cases bit-exact against the model), tint, Halo page, watchdog and every v0.4c17
+  check. Not emulated: the image processor, the camera's colours, real timing. See `docs/OMD-EM1-II/HALATION.md` step 4.
+
+## v0.4c22t — 2026-11-23 (halation route diagnostic build; emulator-checked, not camera-tested)
+
+- **Diagnostic, no glow.** Same as v0.4c23t without the glow pass: marked colour stills take the Soft Focus Art route
+  with a neutral blend. Shoot the same scene and settings (tripod) with v0.4c17 and with this build: the JPEGs should
+  match. A colour or contrast difference means the Art development (combiner 13) changes pixels, which v0.4c23t then
+  inherits.
+- Watchdog 30 s and the Halo page as in v0.4c23t.
+
+## v0.4c20t / v0.4c21t — 2026-11-23 (withdrawn before any camera test; replaced by v0.4c22t / v0.4c23t)
+
+- A review found that their gate set the Soft Focus flag in the flag converter for every marked colour still,
+  including kinds and constructor branches nobody had emulated (High Res, HDR, bracketing, Live Composite), and that
+  the combiner hooks trusted one marker byte. v0.4c22t / v0.4c23t allow only kinds 0x1000 / 0x1001, set the flag only
+  at the hooked builder call, and the combiners also need the stage bits and the flag. The tested route is unchanged
+  (the marked job is byte for byte the same except the hl_ob address). Their release folders were removed.
+
+## v0.4c19t — 2026-11-23 (Sharpness scale camera-test build; emulator-checked, not camera-tested)
+
+- Sharpness becomes a linear scale: −2 off, −1 25 %, 0 50 %, +1 75 %, +2 100 % (= stock +2). Flat and Log stay stock.
+  Menus and EXIF still show −2..+2.
+- v0.4c17 otherwise (no halation). To go back, flash v0.4c17 or the stock restore file.
+- Emulator: the sharpening-gain helper on stock and patched images (3,780 runs, `tools/omdem1mk2_emu_sharp_scale.py`),
+  plus every v0.4c17 check. See `docs/PORT_EM1MK2.md` §5 for what was and wasn't emulated, and the camera checks.
+
+## v0.4c18t — 2026-11-20 (halation step 3 camera-test build; emulator-checked, not camera-tested)
+
+- **Test build, not for everyday use — and no visible effect.** It sets the Soft Focus flag 0x80 on ordinary colour
+  stills (stage fixed at 2). **Correction (2026-11-23):** the capture-job emulation (`tools/omdem1mk2_emu_work_list.py`)
+  shows that Vivid / Natural / Color Creator stills use the plain builder `0x603a63f4`, which ignores that flag and
+  builds the same four work-list items as stock. So this build makes **no glow**; the earlier "soft neutral glow" note
+  was wrong (it assumed the E-P7 behaviour). Not worth a camera test; the colour-still route is step 4a.
+- Same as v0.4c17 otherwise. To go back, flash v0.4c17 or the stock restore file.
+- Emulator: the gate through the real flag converter (1,260 runs, stage / Art Effect / picture mode / capture kind),
+  plus every v0.4c17 check. See `docs/OMD-EM1-II/HALATION.md` "Step 3" for what to look at on the camera.
+
 ## v0.4c17 — 2026-11-20 (emulator-checked test release)
 
 - Loading a card pack after opening Color Creator keeps the built-in look active until the editor is reopened.

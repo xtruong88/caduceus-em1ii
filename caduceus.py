@@ -29,6 +29,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import zlib
 import time
 from typing import Dict, List, Optional, Tuple
 import urllib.request
@@ -672,6 +673,19 @@ def copy_synced(src, dst):
             pass
 
 
+def em1mk2_looks_ok(data: bytes) -> bool:
+    """True if the E-M1 II card loader (sd_loader.s sd_check) would accept this LOOKS.BIN: E-P7 v3 header and CRC."""
+    size = len(data)
+    if not 128 <= size <= 2112 or size % 64:
+        return False
+    magic, version, hdr_len = data[:4], *struct.unpack_from('<HH', data, 4)
+    payload, crc = struct.unpack_from('<II', data, 12)
+    n, rec_len = struct.unpack_from('<HH', data, 24)
+    if (magic, version, hdr_len, rec_len) != (b'EP7B', 3, 64, 64) or payload != size - 64 or n != payload // 64:
+        return False
+    return zlib.crc32(data[:16] + data[20:]) & 0xffffffff == crc
+
+
 def copy_to_card(build, card, camera: Camera):
     """Copy the update and starter files, keeping the user's camera settings."""
     dco = card / 'DCOLYMP'
@@ -693,9 +707,12 @@ def copy_to_card(build, card, camera: Camera):
     looks = build / camera.mod_dir / 'LOOKS.BIN'
     if looks.is_file():
         card_looks = mod / 'LOOKS.BIN'
-        if camera.id == 'em1mk2' and card_looks.exists():
+        keep = camera.id == 'em1mk2' and card_looks.is_file() and em1mk2_looks_ok(card_looks.read_bytes())
+        if keep:
             print(f'  kept your existing {camera.mod_dir}/LOOKS.BIN (your saved looks)')
         else:
+            if camera.id == 'em1mk2' and card_looks.exists():
+                print(f'  replaced {camera.mod_dir}/LOOKS.BIN: this firmware cannot read it (old format or damaged)')
             copy_synced(looks, card_looks)
             check.append(f'{camera.mod_dir}/LOOKS.BIN')
     if (build / camera.mod_dir / 'BUNDLES.BIN').exists():

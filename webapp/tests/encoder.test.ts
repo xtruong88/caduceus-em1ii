@@ -19,7 +19,7 @@ import { releaseLooksWithHalation } from './halation-fixture';
 
 const WEBAPP = join(__dirname, '..');
 const ROOT = join(WEBAPP, '..');
-const python = ['.venv/bin/python', 'python3'].map((p) => (p.startsWith('.') ? join(ROOT, p) : p))
+const python = ['.venv/bin/python', 'python3', 'python'].map((p) => (p.startsWith('.') ? join(ROOT, p) : p))
   .find((p) => { try { execFileSync(p, ['-c', '0']); return true; } catch { return false; } });
 const RELEASE_LOOKS = join(ROOT, 'releases/v0.24/card/EP7MOD/LOOKS.BIN');
 const released = () => releaseLooksWithHalation(RELEASE_LOOKS);   // + the 0.31h2 preset halation
@@ -302,12 +302,11 @@ describe.skipIf(!python)('cross-check with the repo\'s Python tools (v3 + v0.19 
 });
 
 describe('card zip', () => {
-  it('is a valid zip with the EP7MOD folder (checked with Python zipfile)', async () => {
+  it.skipIf(!python)('is a valid zip with the EP7MOD folder (checked with Python zipfile)', async () => {
     const { makeZip } = await import('../src/zip');
     const lb = encodeLooksBin(library()), bb = encodeBundlesBin(library());
     const z = makeZip([{ name: 'EP7MOD/LOOKS.BIN', data: lb }, { name: 'EP7MOD/BUNDLES.BIN', data: bb }]);
-    const py = python ?? 'python3';
-    const out = execFileSync(py, ['-I', '-c',
+    const out = execFileSync(python!,['-I', '-c',
       'import sys,zipfile,io,hashlib;z=zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read()));assert z.testzip() is None;' +
       'print(";".join(f"{i.filename}:{hashlib.sha256(z.read(i)).hexdigest()}" for i in z.infolist()))'], { input: Buffer.from(z) }).toString().trim();
     const sha = (b: Uint8Array) => createHash('sha256').update(b).digest('hex');

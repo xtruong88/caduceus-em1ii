@@ -173,6 +173,11 @@ def find_stock_file(cam: cameras.Camera, expected=None) -> Path:
     for p in candidates:
         if p.is_file() and p.stat().st_size == cam.stock_size and sha(p.read_bytes()) == expected:
             return p
+    present = [p for p in candidates if p.is_file()]
+    if present:
+        raise ValueError(f"No stock firmware for {cam.name} matches this release's SHA-256 {expected}. "
+                         f"Found {', '.join(map(str, present))} with a different checksum; this release was built on "
+                         f"another {cam.stock_name}. Pass --stock with the matching file.")
     raise ValueError(f"Stock firmware file for {cam.name} not found. Place {cam.stock_name} in stock_firmware/ or pass --stock.")
 
 

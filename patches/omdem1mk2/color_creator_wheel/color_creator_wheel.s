@@ -46,7 +46,11 @@
 .equ SID_TONE_HL,  384      /* 0x3739 Highlights */
 .equ SID_TONE_MID, 692      /* 0xEFC9 Midtones (no stock UI on this body, but the request reads it) */
 .equ SID_TONE_SH,  383      /* 0x3719 Shadows */
-.equ N_PAGES,      4        /* Film, Chroma, Luminance, Strength */
+.ifndef HALO
+.equ HALO, 0
+.endif
+.equ N_PAGES,      4 + HALO /* Film, Chroma, Luminance, Strength (+ Halo: build with EM1_CC_HALO=1) */
+.equ SID_HALO,     961      /* halation stage, docs/OMD-EM1-II/HALATION.md: 0 Off, 1 Low, 2 Med, 3 High */
 .equ VIVID_MIN,    -4       /* lowest valid 618 value; there is no monochrome in Color Creator */
 
 .include "p_layout.inc"
@@ -316,6 +320,12 @@ cc_left_right_common:
     beq cc_lr_chr
     cmp 2,d2
     beq cc_lr_lum
+.if HALO
+    cmp 4,d2
+    bne 1f
+    jmp hl_ui_step           /* page 4: Halo (section .hlui) */
+1:
+.endif
     /* Page 3 (Strength) */
     mov d3,d2
     call step_strength,[d2,d3,a2,a3],20
@@ -441,6 +451,11 @@ cc_guide:
 
     cmp 3,d1
     beq guide_page_str
+.if HALO
+    cmp 4,d1
+    bne guide_page_str
+    jmp hl_ui_guide          /* page 4: "Halo Med" (section .hlui) */
+.endif
 
 guide_page_str:
     /* Page 3: "Strength x1.5" */
@@ -994,3 +1009,54 @@ str_str_vals:
 
 /* builtin_looks (16 x 64-byte records) lives in the Section 5 FF tail (build.py BUILTIN_ADDR): Section 6
  * loads only up to 0x612e7000, which this cave nearly fills. */
+
+.if HALO
+/* =========================================================================
+ * Halo page (page 4), in the 100 KB gap (section .hlui, build.py HALO_UI_ADDR): needs the halation patch's
+ * Section 6 loaded-end edit (check_loaded refuses a release without it).
+ * hl_ui_step: from cc_left_right_common (a2 = P, a3 = parent, d3 = -1 / +1, cc_left/right frame): step the
+ *   stage 0..3 (clamped; a stored value outside 0..3 counts as Off), store it with SetValue(961), redraw.
+ * hl_ui_guide: from cc_guide (a2 = text destination, cc_guide frame): "Halo Off|Low|Med|High", read back.
+ * ========================================================================= */
+    .section .hlui,"ax"
+hl_ui_step:
+    mov SID_HALO,d0
+    call get_setting_facade,[d2,d3,a2,a3],24
+    cmp 3,d0
+    bls 1f
+    clr d0
+1:
+    add d3,d0
+    cmp 0,d0
+    bge 2f
+    clr d0
+2:
+    cmp 3,d0
+    ble 3f
+    mov 3,d0
+3:
+    mov d0,d1
+    mov SID_HALO,d0
+    call set_setting_facade,[d2,d3,a2,a3],20
+    jmp cc_poke_child
+
+hl_ui_guide:
+    mov str_halo,a1
+    call copy_ascii_to_u16,[],4
+    mov SID_HALO,d0
+    call get_setting_facade,[d2,d3,a2,a3],24
+    cmp 3,d0
+    bls 1f
+    clr d0
+1:
+    asl 3,d0
+    mov str_halo_vals,a1
+    add d0,a1
+    call copy_ascii_to_u16,[],4
+    jmp guide_done
+
+str_halo:
+    .asciz "Halo "
+str_halo_vals:
+    .ascii "Off\0\0\0\0\0" "Low\0\0\0\0\0" "Med\0\0\0\0\0" "High\0\0\0\0"
+.endif

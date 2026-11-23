@@ -1,0 +1,38 @@
+{
+  "camera": "em1mk2",
+  "components": [
+    "0x100",
+    "0x101",
+    "0x106",
+    "0x10e",
+    "0x102"
+  ],
+  "edits": 230,
+  "changed_payload_bytes": 10908,
+  "spec": "releases/em1mk2/v0.4c19t/edits.json",
+  "spec_sha256": "28ed87bf8a8b6e37a2987a042d5765b427e1cf23e0932d787666df4d72e1fd89",
+  "stock_sha256": "691a8a8e90af75b3848b70856a3a49ef24d72394cdfd2766fa37bdfe6325de70",
+  "patched_sha256": "88830c10bade9c4abdc37d6c58f7fa87d97baf1412cce7545ba12013b26a683e",
+  "restore_sha256": "691a8a8e90af75b3848b70856a3a49ef24d72394cdfd2766fa37bdfe6325de70",
+  "bytes": 93050944,
+  "camera_name": "Olympus OM-D E-M1 Mark II",
+  "camera_contacted": false,
+  "checks": [
+    "audit_opcodes",
+    "check_loaded",
+    "emu_af",
+    "emu_artflags",
+    "emu_aspect",
+    "emu_blend_setup",
+    "emu_capture_kind",
+    "emu_color_creator",
+    "emu_combiner",
+    "emu_fixed_patches",
+    "emu_mapper",
+    "emu_rules",
+    "emu_scp",
+    "emu_sdload",
+    "emu_sharp_scale",
+    "emu_validator"
+  ]
+}

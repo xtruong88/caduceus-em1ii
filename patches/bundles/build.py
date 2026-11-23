@@ -37,7 +37,7 @@ MAIN_SHA = '5dd9af164b4590c7e82f6905c919b3cc450bb58f2d5742ab2a0e3a4eb2e26190'
 BASE = 0x60020020
 RECIPE_FILES = [ROOT / 'sim/recipes/fuji_like.json', ROOT / 'sim/recipes/film_look.json',
                 ROOT / 'sim/recipes/library_v1.json', ROOT / 'sim/recipes/library_v2.json',
-                ROOT / 'sim/recipes/library_v3.json']
+                ROOT / 'sim/recipes/library_v3.json', ROOT / 'sim/recipes/ricoh_like.json']
 
 # --- verified sites (stock bytes checked below against the decoded main)
 ALLOC, ALLOC_STOCK, JOB_SIZE, EXT = 0x603537f0, bytes.fromhex('2c803c'), 15488, 24

@@ -11,8 +11,9 @@ every body.
 
 **Latest build: v0.4c17** (emulator-checked, not yet camera-tested; see [Status](#status)) · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** ·
 **[Port notes](docs/PORT_EM1MK2.md)** · **[To-do](current.todo)** ·
-Vietnamese firmware update guides: [OM Workspace](docs/huong-dan-cap-nhat-firmware-om-workspace.md),
-[SD card](docs/huong-dan-cap-nhat-firmware.md)
+Vietnamese firmware guides: [E-M1 II backup, SD install and restore (HTML)](docs/huong-dan-firmware-em1-ii.html),
+[E-M1 II official update with OM Workspace](docs/huong-dan-cap-nhat-firmware-om-workspace.md),
+[PEN E-P7 SD update](docs/huong-dan-cap-nhat-firmware.md)
 
 > [!WARNING]
 > **Experimental, use at your own risk.** This is unofficial, in-development firmware modification for one

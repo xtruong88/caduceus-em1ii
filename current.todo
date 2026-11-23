@@ -168,10 +168,26 @@ wheel's vividness also stays 0, that is a separate symptom.
 * Persistence: picked look kept over power-off.
 
 ### Priority 2: halation (E-P7 version, global stage; plan and owner decisions: docs/OMD-EM1-II/HALATION.md)
-* Step 2 (NOW): find a spare remembered setting for the stage; find the Soft Focus flag hook / entry
-  (≈0x604228fc, ≈0x6039517c / 0x60398ee1), combiner 11/12, CPU-pass route and watchdog sites by code-shape search;
-  emulator fixtures for the capture job.
-* Step 3: bloom route (one camera test). Step 4: halation pass + gate + Halo row in color_creator_wheel, emulated first.
+* Step 2 (NOW): sites found statically (docs/OMD-EM1-II/HALATION.md "Step 2"): flag hook 0x604228fc, blend setup
+  0x60398ee1, combiner 11/12 table words 0x6053e164 / 0x6053e16c (no weight getter here), CPU-pass services.
+  Flag converter 0x6042285e emulated (tools/omdem1mk2_emu_artflags.py). Stage setting = sid 961 (key 0xF709[0]):
+  0..3 round-trip and survival of every boot reset emulated (tools/omdem1mk2_emu_spare_setting.py); power-off survival
+  needs a camera test. Emulated too: capture-kind mapper 0x6042257f (emu_capture_kind), combiner 11/12 selection and
+  the neutral-blend table-word stubs (emu_combiner), blend setup 0x60398ee1 (emu_blend_setup; request = job+11364, so
+  the combiner stub can find its job), mapper 0x6006888f address map (emu_mapper). Step 2 done.
+* Step 3 (built, emulated): patches/omdem1mk2/halation hooks the flag converter entry 0x6042285e and adds 0x80 for
+  gated colour stills (stage sid 961 1..3, no Art Effect, mode < 100 and not 5 / 12, kind not excluded);
+  tools/omdem1mk2_emu_halation_flag.py. Correction 2026-11-23: colour stills use the plain builder 0x603a63f4, which
+  ignores 0x80 (tools/omdem1mk2_emu_work_list.py), so v0.4c18t has no visible effect: skip its camera test.
+* Step 4a (open): find a completion point after the colour-still image is final (the plain list 0x603a5d7d,
+  0x603a5d96, 0x603a5df6, 0x60391a9b) to run hl_pass; the Art route (slot 3 = 0x60398ee1) is confirmed for Art Filters.
+* Step 4: per-job mark + combiner 11/12 stubs (strength, neutral blend), halation pass on the CPU (mapper map above),
+  look tint, Halo row in color_creator_wheel writing sid 961; each emulated first.
+  2026-11-23: all built and emulated; watchdog 30 s; test builds v0.4c22t (no-pass diagnostic: JPEG must match
+  v0.4c17) and v0.4c23t (glow, stage fixed at Med) sealed (narrowed gate; v0.4c20t / v0.4c21t withdrawn).
+  Camera order: v0.4c17 first (never flashed on the catalog stock), then v0.4c22t, then v0.4c23t, then the release
+  candidate v0.4c24 (stage from the Halo page, default Off). Protocol: docs/OMD-EM1-II/thu-may-halation.md; card-ready
+  folders: out/em1mk2-thu-may/1..4 (rebuild with caduceus.py build if out/ is gone). NEXT: camera test of both, then the stage from sid 961.
 * Code goes in the 100 KB region; the 162 KB gap 0x60bc8800..0x60bf1000 can be probed the same way if needed.
 
 ### Priority 3: aspect, still untested on camera

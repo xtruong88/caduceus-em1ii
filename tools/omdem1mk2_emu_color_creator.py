@@ -105,6 +105,18 @@ def main(spec):
     assert early.call(GUIDE).startswith('Bleach Byp. C1.1') and early.rendered_settings() == bleach
     print('Card loaded before opening: both looks apply; reopening preserves the selection')
 
+    # Stepping while the card is the source wraps within the card's own count (2), never into built-in looks 2..15.
+    early.call(UP)
+    banner = early.call(GUIDE)
+    assert banner.startswith('Velvia C1.1') and early.rendered_settings() == velvia, banner
+    assert struct.unpack_from('<H', early.state, 16)[0] == 0
+    early.call(DOWN)
+    banner = early.call(GUIDE)
+    assert banner.startswith('Bleach Byp. C1.1') and early.rendered_settings() == bleach, banner
+    assert struct.unpack_from('<H', early.state, 16)[0] == 1
+    assert early.scp() == 'Bleach Byp.'
+    print('Card source: UP from the last card look wraps to look 0, DOWN from look 0 wraps to the last')
+
     late = Editor(patched, fixtures)
     late.call(CREATE)
     builtin = late.call(GUIDE)

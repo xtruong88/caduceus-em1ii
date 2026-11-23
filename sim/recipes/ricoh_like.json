@@ -1,0 +1,73 @@
+{
+ "schema": "ep7-look-library/1",
+ "_comment": "Ricoh GR-style colour looks (docs/LIBRARY_V1.md, section \"Ricoh-style pack\"). Same schema and camera-feasible controls as library_v3.json. Own designs from Ricoh's published Image Control names and descriptions; Ricoh publishes no numbers, so no measured data is used. The character is carried by sat/hue/light and H/M/S tone so that it survives on bodies without WB shift or Blacks/Whites (E-M1 II); WB, Blacks/Whites, grain and vignette only add to it.",
+ "sector_order": ["yellow", "orange", "orange_red", "red", "magenta", "violet", "blue", "blue_cyan", "cyan", "green_cyan", "green", "yellow_green"],
+ "recipes": {
+  "ricoh_positive": {
+   "name": "Pos. Film",
+   "description": "Slide-film punch: rich but not Velvia-loud colour, deep teal-leaning skies, crimson reds, golden oranges, olive-leaning greens, firm contrast with dense shadows.",
+   "base": "Color Profile",
+   "sat": [3, 2, 2, 3, 1, 1, 3, 4, 3, 2, 2, 3],
+   "hue": [1, 0, -1, -1, 0, 0, -2, -1, 0, 0, -2, 0],
+   "light": [1, 0, 0, -1, 0, 0, -2, -2, -1, -1, -1, 0],
+   "tone": {"highlights": 1, "shadows": -3, "midtones": 0},
+   "contrast": 2,
+   "grain": "off",
+   "wb_shift": {"a_b": 1, "g_m": 0},
+   "source": "Own design after Ricoh's Positive Film Image Control (GR III / IIIx / IV): \"vivid, high-contrast colours like positive film\" in Ricoh's descriptions. No Ricoh data used."
+  },
+  "ricoh_negative": {
+   "name": "Neg. Film",
+   "description": "Soft, faded negative print: low contrast, lifted blacks, muted colour, teal-shifted greens and cyan-leaning skies, light warm skin.",
+   "base": "Color Profile",
+   "sat": [-1, 0, 0, -1, -2, -2, -2, -2, -1, -2, -3, -2],
+   "hue": [0, -1, 0, 0, 0, 0, -2, -1, 0, 1, 2, 1],
+   "light": [1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+   "tone": {"highlights": -2, "shadows": 3, "midtones": 0},
+   "contrast": -2,
+   "grain": "low",
+   "wb_shift": {"a_b": 0, "g_m": 1},
+   "source": "Own design after Ricoh's Negative Film Image Control (GR III / IIIx firmware 1.50, GR IV): \"subdued, low-contrast colour like negative film\" in Ricoh's descriptions. No Ricoh data used."
+  },
+  "ricoh_retro": {
+   "name": "Retro",
+   "description": "Old print: warm and yellowed, faded blues and skies, olive-yellow greens, soft contrast with lifted blacks, darker corners.",
+   "base": "Color Profile",
+   "sat": [1, 0, -1, -1, -3, -3, -4, -4, -3, -3, -2, 0],
+   "hue": [0, 1, 1, 1, 0, 0, 0, -1, -1, -1, -3, -2],
+   "light": [1, 1, 0, 0, 0, 0, 1, 1, 1, 0, -1, 0],
+   "tone": {"highlights": -2, "shadows": 2, "midtones": 1},
+   "contrast": -1,
+   "grain": "medium",
+   "wb_shift": {"a_b": 3, "g_m": 0},
+   "vignette": -2,
+   "source": "Own design after Ricoh's Retro Image Control (GR series): a faded, warm-toned \"old photo\" look with toning and vignetting. The yellowed greys come from the WB shift, which bodies without WB shift (E-M1 II) cannot show. No Ricoh data used."
+  },
+  "ricoh_cine_yellow": {
+   "name": "Cine Yellow",
+   "description": "Warm cinema grade: golden-amber cast, yellow-olive foliage, muted teal skies, gentle contrast with soft highlights.",
+   "base": "Color Profile",
+   "sat": [2, 1, 0, -1, -2, -2, -2, -1, -1, -2, -2, 1],
+   "hue": [0, 2, 0, 0, 0, 0, -2, 0, 0, -2, -2, -1],
+   "light": [1, 0, 0, 0, 0, 0, -1, -1, 0, -1, -1, 0],
+   "tone": {"highlights": -1, "shadows": 1, "midtones": 0},
+   "contrast": 0,
+   "grain": "low",
+   "wb_shift": {"a_b": 3, "g_m": 1},
+   "source": "Own design after Ricoh's Cinema (Yellow) Image Control (GR IV, 2025): a yellow-leaning cinematic tone. Ricoh publishes only the name and a short description. No Ricoh data used."
+  },
+  "ricoh_cine_green": {
+   "name": "Cine Green",
+   "description": "Cool cinema grade: green-teal cast, teal skies, deep cyan-green foliage, muted warm colours, lifted blacks and low contrast.",
+   "base": "Color Profile",
+   "sat": [-2, -1, -1, -1, -3, -3, -1, 0, 1, 1, 0, -2],
+   "hue": [1, -1, 0, 0, 0, 0, -3, -1, 0, 0, 2, 1],
+   "light": [0, 0, 0, -1, 0, 0, 0, 0, -1, -1, -1, 0],
+   "tone": {"highlights": -2, "shadows": 2, "midtones": 0},
+   "contrast": -1,
+   "grain": "low",
+   "wb_shift": {"a_b": -1, "g_m": 3},
+   "source": "Own design after Ricoh's Cinema (Green) Image Control (GR IV, 2025): a green-leaning cinematic tone. Ricoh publishes only the name and a short description. No Ricoh data used."
+  }
+ }
+}

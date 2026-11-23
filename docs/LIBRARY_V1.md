@@ -266,3 +266,50 @@ the spline x tables and exact test vectors, and ports run the splines. Blacks/Wh
 `tools/ep7_tone.py` `remap()`. `sim/film.py` applies the result luminance-only after the base curve and the
 contrast model (`"_tone_model": "legacy"` restores the old guess); `sim/library_preview.py bundles/library_v3.json
 <out>` renders the library with each look's tone.
+
+## Ricoh-style pack (5 colour looks, separate card file)
+
+`bundles/ricoh_gr.json`, recipes in `sim/recipes/ricoh_like.json`. Five colour looks after Ricoh GR Image Controls,
+made for the **E-M1 II** first. The 32-look library is full, so they are not part of `library_v3.json`.
+
+**E-M1 II card (21 looks).** A card `LOOKS.BIN` replaces the whole look list, so the E-M1 II card keeps its canonical
+16 looks (Provia … Acros, byte-identical to `card/EM1MOD/LOOKS.BIN`) and adds the five after them:
+
+```bash
+python -I patches/omdem1mk2/sd_loader/make_looks_bin.py --extra bundles/ricoh_gr.json --out out/em1mk2_ricoh
+```
+
+Copy `out/em1mk2_ricoh/EM1MOD/LOOKS.BIN` to `EM1MOD/` on the card. `--extra` writes only to `--out`. The release
+cards and `card/EM1MOD/` stay the canonical 16.
+
+**Only the five looks** (E-P7, or for the Control Panel): `python -I tools/ep7_looks_bin.py bundles/ricoh_gr.json --out out/ricoh_gr`.
+
+**Untested path on the E-M1 II.** The loader accepts 1..32 looks (`sd_loader.s` `LB_MAX` 2112). So far, though, the camera has only loaded the 16-look card, and the emulator harness
+(`tools/omdem1mk2_emu_color_creator.py`) has only run a 2-look card. Picking looks 16–20 has been neither
+emulated nor camera-tested. Check it on the camera:
+
+- Step the arrows to Pos. Film … Cine Green and back past Acros.
+- Check the banner name and that `C1.1` is shown.
+- Check that the picture changes.
+
+| look | Ricoh Image Control | character | H | S | M | B | W | WB A / G | grain |
+|---|---|---|---|---|---|---|---|---|---|
+| Pos. Film | Positive Film | rich slide colour, teal skies, crimson reds, olive greens, firm contrast | 1 | −3 | 0 | −1 | 1 | +1 / 0 | off |
+| Neg. Film | Negative Film | faded, low contrast, muted, teal greens, cyan skies | −2 | 3 | 0 | 2 | −2 | 0 / +1 | low |
+| Retro | Retro | warm yellowed print, faded blues, olive greens, vignette −2 | −2 | 2 | 1 | 2 | −2 | +3 / 0 | medium |
+| Cine Yellow | Cinema (Yellow), GR IV | golden-amber grade, yellow-olive foliage, muted teal skies | −1 | 1 | 0 | 1 | −1 | +3 / +1 | low |
+| Cine Green | Cinema (Green), GR IV | green-teal grade, teal skies, cyan-green foliage, lifted blacks | −2 | 2 | 0 | 2 | −1 | −1 / +3 | low |
+
+- **Sources.** These are our own designs, based on the names and short descriptions Ricoh publishes. Ricoh publishes no numbers, and no Ricoh files or LUTs were used. The names are generic film terms, with no brand name.
+- **Built for the E-M1 II.** Each look's character comes from 12-sector sat/hue/light and H/M/S tone. The E-M1 II
+  ignores WB shift, Blacks/Whites, grain and vignette (docs/PORT_EM1MK2.md). On the E-M1 II, greys stay neutral. That
+  matters most for Retro and the two Cinema looks: their cast on whites and greys needs WB shift. Hue, sat and tone
+  still carry the foliage, sky and skin changes.
+- **Hue tuning.** Sector influence overlaps. The ColorChecker red patch follows the Or and OR sectors more than Re, and
+  the Gr / YG sectors pull skin. Hues were tuned on ColorChecker patches through the Control Panel preview
+  (`webapp/src/preview.ts`, full look and `toEm1()`). Result: skin hue stays within 3° on Pos. Film, Neg. Film and Retro.
+  With WB, Cine Yellow moves it about 5° toward gold and Cine Green about 9° toward yellow-green, as the grades
+  intend. Pos. Film red holds its hue with C* +9. The two Cinema looks pull skies toward cyan by 5–11°. WB uses the sim convention: G+ is greener (sim/film.py).
+- **Not camera-tested.** The LOOKS.BIN passes `--check` and is byte-identical to the Control Panel encoder and the E-M1 II export.
+  The colour checks are preview-model only. The desktop sim (`sim/library_preview.py`) was not run: it needs the RAW
+  test images. Expect to tune strength on the camera; the E-M1 II Strength page (x1..x3) helps.

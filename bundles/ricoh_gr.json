@@ -1,0 +1,10 @@
+{
+ "_comment": "Ricoh GR-style pack (docs/LIBRARY_V1.md, section \"Ricoh-style pack\"): 5 colour looks, recipes in sim/recipes/ricoh_like.json. Not part of the 32-look library. E-M1 II card (canonical 16 + these 5): patches/omdem1mk2/sd_loader/make_looks_bin.py --extra bundles/ricoh_gr.json --out <dir>. These 5 alone: tools/ep7_looks_bin.py bundles/ricoh_gr.json --out <dir>. Own designs after Ricoh's Image Control names; no Ricoh data used.",
+ "looks": {
+  "ricoh_positive": {"name": "Pos. Film", "recipe": "ricoh_positive", "notes": "Ricoh-style Positive Film: rich slide colour, teal skies, crimson reds, olive greens, firm contrast.", "tone": {"highlights": 1, "shadows": -3, "midtones": 0, "blacks": -1, "whites": 1}},
+  "ricoh_negative": {"name": "Neg. Film", "recipe": "ricoh_negative", "grain": "low", "notes": "Ricoh-style Negative Film: soft, faded, muted colour, teal greens, cyan-leaning skies, lifted blacks.", "tone": {"highlights": -2, "shadows": 3, "midtones": 0, "blacks": 2, "whites": -2}},
+  "ricoh_retro": {"name": "Retro", "recipe": "ricoh_retro", "grain": "medium", "notes": "Ricoh-style Retro: warm, yellowed old print, faded blues, olive greens, darker corners. The yellowed greys need WB shift (not on E-M1 II).", "tone": {"highlights": -2, "shadows": 2, "midtones": 1, "blacks": 2, "whites": -2}},
+  "ricoh_cine_yellow": {"name": "Cine Yellow", "recipe": "ricoh_cine_yellow", "grain": "low", "notes": "Ricoh GR IV-style Cinema (Yellow): golden-amber grade, yellow-olive foliage, muted teal skies.", "tone": {"highlights": -1, "shadows": 1, "midtones": 0, "blacks": 1, "whites": -1}},
+  "ricoh_cine_green": {"name": "Cine Green", "recipe": "ricoh_cine_green", "grain": "low", "notes": "Ricoh GR IV-style Cinema (Green): green-teal grade, teal skies, deep cyan-green foliage, lifted blacks.", "tone": {"highlights": -2, "shadows": 2, "midtones": 0, "blacks": 2, "whites": -1}}
+ }
+}

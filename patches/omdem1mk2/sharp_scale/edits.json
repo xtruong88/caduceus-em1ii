@@ -1,0 +1,29 @@
+{
+ "patch": "sharp_scale",
+ "components": [
+  "0x100"
+ ],
+ "edits": [
+  {
+   "kind": "0x100",
+   "addr": "0x605d2f94",
+   "expect": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "new": "5d2c75fac130f8a501c7098502dc5e5ce1fffa44030711dc545ce1ff5c2c70fac030f8a001c72f5c10fa400307102802a004c222a003c90b84e4e481f8c502ca15a002c907f8c501ca0ca001c907f8c502ca03045c28f8b832dc9b5ce1ff",
+   "why": "sharpness scale stubs ss_index / ss_scale (94 B, section 3 tail)"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x603e8bfa",
+   "expect": "fa44030711",
+   "new": "dc9aa31e00",
+   "why": "sharpness gain helper: table index from Sharpness +2 (Flat/Log keep their own) -> jmp ss_index"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x603e8c83",
+   "expect": "5c28f8b832",
+   "new": "dc2da31e00",
+   "why": "sharpness gain helper: final gain x (Sharpness + 2) / 4 (Flat/Log stock) -> jmp ss_scale"
+  }
+ ]
+}

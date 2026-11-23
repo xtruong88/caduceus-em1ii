@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const RECIPE_FILES = ['sim/recipes/fuji_like.json', 'sim/recipes/film_look.json', 'sim/recipes/library_v1.json',
-  'sim/recipes/library_v2.json', 'sim/recipes/library_v3.json'];
+  'sim/recipes/library_v2.json', 'sim/recipes/library_v3.json', 'sim/recipes/ricoh_like.json'];
 export const GRAINS = ['off', 'fine', 'film', 'standard'];   // v0.22: low -> fine, medium/high -> film (Noise Filter Low / Off)
 const GRAIN_MAP = { off: 'off', global: 'off', standard: 'standard', low: 'fine', fine: 'fine', med: 'film', medium: 'film', high: 'film', film: 'film', heavy: 'film', extreme: 'film' };
 const DEFAULT_NAMES = {

@@ -50,6 +50,9 @@ SECTION6_LOAD_END = 0x612e7000
 S5_FF_START, S5_LOAD_END = 0x60bc8140, 0x60bc8800
 BUILTIN_ADDR = 0x60bc8150
 CAVE_ADDR = 0x612e6900
+# Halo page (EM1_CC_HALO=1): section .hlui in the 100 KB gap that the halation patch makes Section 6 load
+# (patches/omdem1mk2/halation: 0x612e7000.. holds its code, well below this address).
+HALO_UI_ADDR, GAP_END = 0x612f0000, 0x61300000
 
 POINTER_HOOKS = [
     {
@@ -172,10 +175,14 @@ def build():
         builtin = mlb.build_builtin_looks()
         assert len(builtin) == 1024
         probe = os.environ.get('EM1_SPACE_PROBE') == '1'      # code-space probe sp1 (patches/omdem1mk2/space_probe)
+        halo = os.environ.get('EM1_CC_HALO') == '1'           # Halo page (halation step 4f)
         subprocess.run([AS, '-I', str(Path(__file__).parent.parent), '-I', str(Path(__file__).parent)]
-                       + (['--defsym', 'SPACE_PROBE=1'] if probe else []) + ['-o', str(obj), str(src)], check=True)
+                       + (['--defsym', 'SPACE_PROBE=1'] if probe else [])
+                       + (['--defsym', 'HALO=1'] if halo else []) + ['-o', str(obj), str(src)], check=True)
 
         ld_cmd = [LD, '-Ttext', f'{CAVE_ADDR:#x}', '-e', '_start']
+        if halo:
+            ld_cmd.append(f'--section-start=.hlui={HALO_UI_ADDR:#x}')
         # Shared-state routines live in sd_loader (Section 2); build it first.
         exports = json.loads((Path(__file__).parent.parent / 'sd_loader' / 'exports.json').read_text())
         for k in ('p_get', 'p_ensure', 'look_fill'):
@@ -191,6 +198,10 @@ def build():
 
         subprocess.run([OBJCOPY, '-O', 'binary', '-j', '.text', str(elf), str(bin_out)], check=True)
         cave_payload = bin_out.read_bytes()
+        halo_payload = b''
+        if halo:
+            subprocess.run([OBJCOPY, '-O', 'binary', '-j', '.hlui', str(elf), str(tmp / 'hlui.bin')], check=True)
+            halo_payload = (tmp / 'hlui.bin').read_bytes()
 
         nm_out = subprocess.check_output([NM, str(elf)]).decode()
         sym_map = {}
@@ -271,12 +282,25 @@ def build():
         'why': f'Live View Color Creator Caduceus Look Selector & Guide Label ({len(cave_payload)} bytes)'
     })
 
+    if halo:
+        hoff = HALO_UI_ADDR - BASE
+        assert HALO_UI_ADDR + len(halo_payload) <= GAP_END - 16
+        assert all(b == 0xFF for b in main[hoff - 16:hoff + len(halo_payload) + 16]), 'Halo UI area not 0xFF'
+        edits_list.append({
+            'kind': '0x100',
+            'addr': f'{HALO_UI_ADDR:#x}',
+            'expect': 'ff' * len(halo_payload),
+            'new': halo_payload.hex(),
+            'why': f'Color Creator Halo page (sid 961) in the 100 KB gap ({len(halo_payload)} bytes; needs the '
+                   'halation patch, which makes Section 6 load it)',
+        })
+
     edits = {
         'components': ['0x100'],
         'edits': edits_list
     }
 
-    out_file = Path(__file__).parent / 'edits.json'
+    out_file = Path(__file__).parent / ('edits_halo.json' if halo else 'edits.json')
     out_file.write_text(json.dumps(edits, indent=2) + '\n')
     print(
         f'Generated {out_file} ({len(cave_payload)} bytes cave at {CAVE_ADDR:#x}..{cave_end:#x}, '

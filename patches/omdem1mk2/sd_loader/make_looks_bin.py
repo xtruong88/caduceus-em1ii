@@ -155,9 +155,24 @@ EP7_SHA_PREFIX = bytes.fromhex("5dd9af16")
 EP7_LAYOUT_CRC = 0x68068776   # webapp/src/format.ts LAYOUT_CRC
 
 
-def build_looks_bin() -> bytes:
-    """Return EM1MOD/LOOKS.BIN in the E-P7 v3 format (64 + 64 n bytes)."""
-    recs = [make_look_record(look) for look in load_canonical_looks()]
+def extra_records(bundle_path) -> list[bytes]:
+    """64-byte records of a look bundle (bundles/*.json), compiled by the shared tools/ep7_looks_bin.py."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ep7_looks_bin", ROOT / "tools" / "ep7_looks_bin.py")
+    lb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lb)
+    data, _keys, _names = lb.compile_looks(json.loads(Path(bundle_path).read_text(encoding="utf-8")))
+    n = (len(data) - EP7_HDR_LEN) // EP7_REC_LEN
+    return [lb.rec(data, j) for j in range(n)]
+
+
+def build_looks_bin(extra=()) -> bytes:
+    """Return EM1MOD/LOOKS.BIN in the E-P7 v3 format (64 + 64 n bytes): the canonical 16, then any extra records."""
+    recs = [make_look_record(look) for look in load_canonical_looks()] + list(extra)
+    names = [r[48:64].split(b"\0", 1)[0] for r in recs]
+    dup = sorted({nm.decode() for nm in names if names.count(nm) > 1})
+    if dup:
+        raise ValueError(f"duplicate look names on the card: {dup}")
     n = len(recs)
     assert 1 <= n <= 32
     buf = bytearray(EP7_HDR_LEN + EP7_REC_LEN * n)
@@ -184,8 +199,24 @@ def write_builtin_inc(path) -> None:
 
 
 if __name__ == "__main__":
-    import sys
-    version = sys.argv[1] if len(sys.argv) > 1 else "v0.1"
+    import argparse
+    ap = argparse.ArgumentParser(description="Write EM1MOD/LOOKS.BIN (release card and card/), or with --out a card "
+                                             "with extra looks appended after the canonical 16.")
+    ap.add_argument("version", nargs="?", default="v0.1")
+    ap.add_argument("--extra", type=Path, action="append", default=[],
+                    help="look bundle to append (bundles/*.json); repeatable; needs --out")
+    ap.add_argument("--out", type=Path, help="write only <out>/EM1MOD/LOOKS.BIN (release and card/ files untouched)")
+    a = ap.parse_args()
+    if a.extra and not a.out:
+        ap.error("--extra needs --out (the release card stays the canonical 16)")
+    if a.out:
+        data = build_looks_bin([r for b in a.extra for r in extra_records(b)])
+        out_path = a.out / "EM1MOD" / "LOOKS.BIN"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(data)
+        print(f"Wrote {len(data)} bytes to {out_path} (E-P7 v3, {(len(data) - 64) // 64} looks)")
+        raise SystemExit(0)
+    version = a.version
     data = build_looks_bin()
     for d in [
         ROOT / "releases" / "em1mk2" / version / "card" / "EM1MOD",
