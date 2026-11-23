@@ -61,13 +61,32 @@ def spec_files(spec=None, no_pass=0, setting=False):
     return f.name, syms
 
 
-def fix_stage(img, syms):
+def check_off(stock, patched, syms):
+    """Halo Off (sid 961 = 0, the default after flashing): every capture job is the stock job byte for byte, except
+    that a Soft Focus list (Art Filter) names hl_ob where stock names the blur; hl_ob on an unmarked job is the stock
+    blur (check_ob / check_ob_no_pass). MONO (12) is left out: the capture fixture faults on it in stock too."""
+    off = fix_stage(patched, syms, 0)
+    ob, blur = struct.pack('<I', syms['hl_ob']), struct.pack('<I', A.REDUCE)
+    cases = [(mode, 0x1000) for mode in (1, 2, 5, 10, 101)] + [(1, kind) for kind in (0x1001, 0x2001, 0x1008)]
+    renamed = 0
+    for mode, kind in cases:
+        got, want = capture_job(off, mode, kind), capture_job(stock, mode, kind)
+        assert got.keys() == want.keys()
+        for name in got:
+            if got[name] != want[name]:
+                assert got[name].count(ob) == 1 and got[name].replace(ob, blur) == want[name], (mode, hex(kind), name)
+                renamed += 1
+    print(f'Off: stage 0 -> {len(cases)} capture jobs (Vivid, Natural, Monotone, Color Creator, Art Filter 101; kinds '
+          f'0x1001 / 0x2001 / 0x1008) byte for byte stock, except hl_ob for the blur in {renamed} Soft Focus list(s)')
+
+
+def fix_stage(img, syms, stage=STAGE):
     """A build that reads the stage from sid 961: replace hl_flag's own getter call (7 bytes, hl_stage_get) with
     `mov STAGE,d0` + nops. Only the patch's code changes; the sid-961 read itself is checked by emu_halation_flag."""
     m = bytearray(img)
     o = syms['hl_stage_get'] - V.B
     assert m[o] == 0xDD and m[o + 5:o + 7] == b'\xc0\x0c', m[o:o + 7].hex()
-    m[o:o + 7] = bytes([0x80, STAGE]) + b'\xcb' * 5
+    m[o:o + 7] = bytes([0x80, stage]) + b'\xcb' * 5
     return bytes(m)
 
 
@@ -195,6 +214,7 @@ def main():
     path, syms = spec_files(a.spec, int(a.no_pass), a.stage_setting)
     stock, patched = W.image(BASE_SPEC), W.image(path)
     if a.stage_setting:
+        check_off(stock, patched, syms)
         patched = fix_stage(patched, syms)
         print(f'stage read from sid 961; hl_flag getter call at {syms["hl_stage_get"]:#x} fixed to stage {STAGE}')
     mark = check_route(stock, patched, syms)

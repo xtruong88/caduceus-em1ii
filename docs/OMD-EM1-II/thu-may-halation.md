@@ -1,13 +1,36 @@
-# Thử trên máy: v0.4c17 → v0.4c22t → v0.4c23t → v0.4c24 (E-M1 Mark II)
+# Thử trên máy: v0.4c24, hoặc từng bước v0.4c17 → v0.4c22t → v0.4c23t → v0.4c24 (E-M1 Mark II)
 
 Đây là quy trình thử trên thân máy, cũng là bước cuối. Mọi bước trước đó đã chạy trên giả lập: kiểm tra từng bản, dựng
 lại từ firmware gốc khớp từng byte, và đối chiếu tệp khôi phục với tệp gốc. Cách nạp (giữ **OK** khi bật máy, đọc đèn,
 khôi phục) theo [huong-dan-firmware-em1-ii.html](../huong-dan-firmware-em1-ii.html), mục 3, 4 và 6.
 
+## Cách khuyên dùng: nạp một lần v0.4c24
+
+v0.4c24 chứa mọi thứ của các bước 1–3 bên dưới. Ngay sau khi nạp, Halo ở **Off**. Ở trạng thái này, ảnh chụp đi qua
+đúng đường của firmware gốc: giả lập cho thấy job chụp giống bản gốc từng byte, chỉ khác ô trỏ tới bước làm mờ của Art
+Filter Soft Focus, và ô đó chuyển thẳng sang hàm gốc. Phần mới chạy lúc khởi động chỉ có hai thứ:
+- nạp thêm vùng 100 KB: đã thử trên máy với sp1. Trên tệp 3.7 hiện tại không lệnh nào khác dùng vùng này
+  (`tools/omdem1mk2_check_gap_refs.py`);
+- watchdog 30 s.
+
+Vì vậy, chỉ cần nạp một lần là dùng được:
+
+1. Nạp `out/em1mk2-thu-may/4-v0.4c24`.
+2. Kiểm như bước 1: khởi động, chụp và xem ảnh 4:3, 65:24 / 21:9, AF, Color Creator `C1.n`.
+3. **Kiểm đường xử lý mới:** cảnh ban ngày **không có điểm cháy sáng**, tripod, Vivid. Chụp một ảnh với Halo Off và một
+   ảnh với Halo Low. Không có vùng sáng thì quầng gần như bằng 0, nên hai ảnh phải gần như giống nhau. Nếu màu hoặc độ
+   tương phản khác rõ, đường xử lý Art đã đổi điểm ảnh. Khi đó để Halo Off và gửi hai ảnh để phân tích.
+4. **Kiểm quầng:** cảnh đêm có đèn, Halo Med. Phải thấy quầng quanh điểm sáng, máy không tự khởi động lại, và ghi lại
+   thời gian lưu ảnh.
+5. Nếu bước 3 hoặc 4 có gì lạ: chuyển Halo về **Off**, không cần nạp lại. Máy chạy như v0.4c17.
+
+Nếu máy **không khởi động** sau khi nạp: nạp `restore/E1259999.BIN` (xem quy tắc bên dưới). Sau đó, nếu muốn biết phần
+nào gây lỗi, làm lần lượt các bước 1–4.
+
 ## Quy tắc chung
 
-- **Mỗi lần nạp chỉ thêm một bước.** Bước sau chỉ làm khi bước trước đạt. Nếu một bước hỏng, dừng lại và quay về
-  bước gần nhất đã đạt.
+- **Đi theo từng bước khi cần tìm lỗi.** Ở các bước 1–4, mỗi lần nạp chỉ thêm một nhóm thay đổi. Bước sau chỉ làm khi
+  bước trước đạt. Nếu một bước hỏng, dừng lại và quay về bước gần nhất đã đạt.
 - Pin đầy, thẻ ở **khe 1**, trên thẻ chỉ có một tệp `DCOLYMP/E1259999.BIN`. Đối chiếu hash với `SHA256SUMS` của đúng bản.
 - Luôn giữ `restore/E1259999.BIN` trên máy tính. Tệp này là firmware gốc 3.7 của OM, SHA-256 `691a8a8e…`.
 - Nếu máy treo hoặc khởi động lại liên tục: tháo pin, lắp lại, giữ **OK** + bật máy với thẻ chứa tệp khôi phục. Cách

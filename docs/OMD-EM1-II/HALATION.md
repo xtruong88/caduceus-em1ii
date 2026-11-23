@@ -309,8 +309,13 @@ SYS code. Cost: a real hang restarts after up to 30 s instead of 10 s.
   - **Release candidate `v0.4c24` [E]:** v0.4c23t with the stage read from sid 961 (default 0 = Off). Sealing adds
     `emu_halation_flag` without `--force-stage` (the real settings store), `emu_spare_setting` and
     `emu_halation_route --stage-setting`, which runs the sealed image with only hl_flag's own getter call (label
-    `hl_stage_get`) replaced by `mov 2,d0`. Camera order and pass criteria (Vietnamese):
-    [thu-may-halation.md](thu-may-halation.md).
+    `hl_stage_get`) replaced by `mov 2,d0`. With that call fixed to 0 (Halo Off, the default after flashing) the capture
+    jobs for Vivid, Natural, Monotone, Color Creator, Art Filter 101 and kinds 0x1001 / 0x2001 / 0x1008 are stock byte
+    for byte, except the Soft Focus list naming `hl_ob` for the blur (hl_ob = stock blur on an unmarked job).
+    `tools/omdem1mk2_check_gap_refs.py` repeats sp1's scan on the catalog image: in every loaded section only the
+    end-getter stub uses an address in `0x612e7000..0x61300000` as an operand; the 32 branch-shaped hits are data decoded
+    as code (stock never loads the gap, so a real branch there would crash stock). Camera order and pass criteria
+    (Vietnamese, one flash of v0.4c24 recommended): [thu-may-halation.md](thu-may-halation.md).
   - **Not knowable in the emulator:** the bus address the camera gives record 0x1000. The fixture uses 0x8c000000;
     `hl_pass` refuses below 0x84000000 and then leaves the photo untouched. No glow on v0.4c23t with an otherwise normal
     camera points there first.

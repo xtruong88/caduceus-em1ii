@@ -10,7 +10,9 @@ Container update package: `E1259999.BIN` (93,050,944 bytes) installed via `DCOLY
 - v0.4c23t with the strength taken from the Color Creator **Halo** page (Off / Low / Med / High, sid 961). It starts at
   **Off** (the setting's default; stock never writes it), so right after flashing photos match v0.4c17 until Halo is
   turned on. A stored value outside 0..3 counts as Off.
-- Flash it only after v0.4c22t and v0.4c23t have passed on the camera (`docs/OMD-EM1-II/thu-may-halation.md`).
+- It includes everything the test builds check, so it can be flashed on its own: with Halo Off the emulated capture
+  jobs are stock, and a problem with Halo on is undone by setting Halo back to Off (`docs/OMD-EM1-II/thu-may-halation.md`).
+  The step-by-step test builds stay available to find a fault.
 - Emulator: every v0.4c23t check, plus the stage read from sid 961 through the real settings store (`emu_halation_flag`
   without a forced stage, tint cases included), `emu_spare_setting` on this spec, and the route / pass / combiner checks
   on this image with only hl_flag's own getter call fixed to Med (`emu_halation_route --stage-setting`).
