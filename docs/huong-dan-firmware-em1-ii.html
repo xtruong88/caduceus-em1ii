@@ -3,28 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sao lưu và cài Caduceus v0.4c17 cho E-M1 Mark II</title>
+  <title>Hướng dẫn Caduceus cho E-M1 Mark II</title>
   <style>
     :root {
       color-scheme: light dark;
       --bg: #f4f6f7; --paper: #fff; --ink: #18252e; --muted: #465965;
       --line: #d5dfe4; --accent: #075e62; --wash: #eaf3f3;
       --warning-bg: #fff1e3; --warning-text: #862f12; --warning-line: #b3451e;
+      --ok-bg: #e6f4ea; --ok-text: #1d5b2e; --ok-line: #3f8f55;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #111a20; --paper: #19262f; --ink: #ecf3f6; --muted: #b7c8d1;
         --line: #364953; --accent: #8ee0dc; --wash: #22363f;
         --warning-bg: #36271f; --warning-text: #ffd0a5; --warning-line: #f2a367;
+        --ok-bg: #1d3326; --ok-text: #b8e6c4; --ok-line: #5fb47a;
       }
     }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 system-ui, sans-serif; }
-    .wrap { max-width: 960px; padding: 0 clamp(16px, 4vw, 40px); margin: auto; }
+    .wrap { max-width: 980px; padding: 0 clamp(16px, 4vw, 40px); margin: auto; }
     header { border-top: 6px solid var(--accent); background: var(--paper); border-bottom: 1px solid var(--line); padding: 36px 0 26px; }
     main { padding-block: 24px 44px; }
     h1, h2, h3 { line-height: 1.24; text-wrap: balance; }
-    h1 { font-size: clamp(2rem, 5vw, 3.35rem); letter-spacing: -.045em; margin: 0 0 14px; }
+    h1 { font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: -.04em; margin: 0 0 14px; }
     h2 { font-size: clamp(1.35rem, 4vw, 1.8rem); margin: 0 0 16px; }
     h3 { font-size: 1.08rem; margin: 22px 0 8px; }
     p { margin: 0 0 12px; }
@@ -37,145 +39,368 @@
     ul, ol { padding-left: 1.45em; margin: 8px 0 14px; }
     li + li { margin-top: 8px; }
     li::marker { color: var(--accent); font-weight: 700; }
-    .warning { padding: 12px 16px; border-left: 4px solid var(--warning-line); border-radius: 4px 8px 8px 4px; color: var(--warning-text); background: var(--warning-bg); }
+    .warning, .ok { padding: 12px 16px; border-radius: 4px 8px 8px 4px; margin: 0 0 14px; }
+    .warning { border-left: 4px solid var(--warning-line); color: var(--warning-text); background: var(--warning-bg); }
+    .ok { border-left: 4px solid var(--ok-line); color: var(--ok-text); background: var(--ok-bg); }
     .sources { font-size: .88rem; margin: 14px 0 0; color: var(--muted); }
     code, kbd { font-family: ui-monospace, Consolas, monospace; font-size: .89em; }
     :not(pre) > code, kbd { background: var(--wash); border-radius: 4px; padding: 2px 4px; overflow-wrap: anywhere; }
     kbd { border: 1px solid var(--line); }
     pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--wash); border: 1px solid var(--line); border-radius: 8px; margin: 10px 0 14px; padding: 12px 14px; }
+    .table { overflow-x: auto; margin: 10px 0 16px; }
+    table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+    th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    th { background: var(--wash); font-weight: 700; }
+    .tag { display: inline-block; font-size: .8rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+    .tag.c { background: var(--ok-bg); color: var(--ok-text); }
+    .tag.e { background: var(--wash); color: var(--accent); }
+    .tag.n { background: var(--warning-bg); color: var(--warning-text); }
     .files { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; margin: 12px 0 18px; }
     .files div { padding: 12px 14px; background: var(--wash); border: 1px solid var(--line); border-radius: 8px; }
     .files dt { font-weight: 700; }
     .files dd { margin: 6px 0 0; }
     details { padding: 10px 0; border-top: 1px solid var(--line); }
-    details p { margin: 8px 0 0; }
+    details p, details ul, details ol { margin-top: 8px; }
     summary { font-weight: 650; color: var(--accent); cursor: pointer; }
     @media print {
       :root { --bg: #fff; --paper: #fff; --ink: #111; --muted: #333; --accent: #125b5c; --line: #aaa; --wash: #f4f4f4; }
       nav { display: none; }
       header, section { padding: 12px 0; border: 0; }
       h2, h3 { break-after: avoid; }
-      pre, .warning, .files div { break-inside: avoid; }
+      pre, .warning, .ok, .files div, tr { break-inside: avoid; }
       details::details-content { content-visibility: visible; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <h1>Sao lưu và cài Caduceus cho E‑M1 Mark II</h1>
-      <p class="lead">Olympus OM‑D E‑M1 Mark II · Nền firmware 3.7 (3.70, build 3700) · Gói v0.4c17 qua thẻ SD</p>
-      <p class="warning"><strong>v0.4c17 là bản thử đã kiểm tra bằng giả lập và còn chờ xác nhận trên máy thật.</strong> Quá trình nạp có thể làm máy treo, mất dữ liệu hoặc không khởi động được. Chuẩn bị bản khôi phục, pin đầy và thẻ đã sao lưu trước khi nạp.</p>
-      <nav aria-label="Mục lục">
-        <a href="#sao-luu">1. Sao lưu</a><a href="#goi">2. Kiểm tra gói</a>
-        <a href="#the-sd">3. Chuẩn bị thẻ</a><a href="#nap">4. Nạp firmware</a>
-        <a href="#kiem-tra">5. Thử trên máy</a><a href="#khoi-phuc">6. Khôi phục</a>
-        <a href="#loi">Xử lý lỗi</a>
-      </nav>
-    </div>
-  </header>
+<header>
+  <div class="wrap">
+    <h1>Hướng dẫn Caduceus cho E-M1 Mark II</h1>
+    <p class="lead">Olympus OM-D E-M1 Mark II · nền firmware chính hãng 3.7 (build 3700) · bản nên dùng: <strong>v0.4c24</strong>.
+      Trang này dành cho người mới: Caduceus là gì, cách sao lưu, cách nạp, cách dùng từng tính năng trên máy và cách quay về firmware gốc.</p>
+    <nav aria-label="Mục lục">
+      <a href="#gioi-thieu">1. Giới thiệu</a>
+      <a href="#tinh-nang">2. Tính năng</a>
+      <a href="#chuan-bi">3. Chuẩn bị</a>
+      <a href="#sao-luu">4. Sao lưu</a>
+      <a href="#tao-goi">5. Tạo gói</a>
+      <a href="#chep-the">6. Chép lên thẻ</a>
+      <a href="#nap">7. Nạp</a>
+      <a href="#kiem-tra">8. Kiểm tra</a>
+      <a href="#su-dung">9. Cách dùng</a>
+      <a href="#khoi-phuc">10. Khôi phục</a>
+      <a href="#loi">11. Xử lý lỗi</a>
+      <a href="#cac-ban">12. Các bản</a>
+    </nav>
+  </div>
+</header>
 
-  <main class="wrap">
-    <section id="sao-luu">
-      <h2>1. Kiểm tra máy và sao lưu</h2>
-      <ol>
-        <li><strong>Kiểm tra thân máy và firmware.</strong> Đọc đúng tên <strong>E‑M1 Mark II</strong> trên thân máy. Vào <kbd>MENU</kbd> → <strong>Setup</strong> (cờ lê) → <strong>Firmware</strong>, ghi lại dòng <strong>Body</strong> và phiên bản Caduceus đang dùng nếu biết. Chỉ dùng gói này cho nền <strong>3.7</strong>. Nếu máy nguyên bản đang ở bản thấp hơn, lưu cài đặt và dữ liệu trước, rồi cập nhật lên 3.7 bằng OM Workspace. Nếu phiên bản hoặc nguồn bản vá hiện tại chưa rõ, dừng để xác minh. <a href="huong-dan-cap-nhat-firmware-om-workspace.html">Hướng dẫn cập nhật chính hãng</a></li>
-        <li><strong>Giữ tệp có thể nạp lại.</strong> Gói v0.4c17 cung cấp <code>restore/E1259999.BIN</code>, là tệp cập nhật chính hãng 3.7 của OM dùng để trở về firmware gốc. Repo không có công cụ đọc ra firmware đang nằm trong thân máy. Nếu đang dùng Caduceus cũ, lưu cả gói cài đúng phiên bản đã nạp (gồm <code>DCOLYMP/E1259999.BIN</code> và <code>SHA256SUMS</code>) vào thư mục riêng theo phiên bản. Nếu đã mất tệp cài, cần dựng lại đúng release với firmware nền mà release đó yêu cầu. Nếu máy đang dùng firmware gốc thấp hơn 3.7, gói <code>restore</code> chỉ đưa máy về 3.7 và OM Workspace không hỗ trợ hạ phiên bản.</li>
-        <li><strong>Lưu cài đặt thân máy.</strong> Tắt máy, đợi đèn thẻ tắt rồi tháo thẻ, nối USB và bật máy. Chọn <strong>Storage</strong> trên máy ảnh. Trong OM Workspace, vào <strong>Camera → Custom Settings → Save</strong>, chọn nhóm cài đặt và lưu tệp vào máy tính. Ghi lại các mục quan trọng như C1/C2/C3, nút tùy chỉnh và AF để dễ đối chiếu.</li>
-        <li><strong>Sao lưu thẻ SD.</strong> Chép ảnh, video và toàn bộ <code>EM1MOD/</code> nếu có từ các thẻ đang dùng sang máy tính. Mở thử vài ảnh hoặc video. Nếu cần định dạng thẻ để chuẩn bị, làm sau khi xác nhận bản sao đã đọc được.</li>
-      </ol>
-      <p class="sources"><a href="https://download.omsystem.com/pages/inst/em1m2/manual_em1m2_ENU.pdf">Sổ tay E‑M1 Mark II</a> · <a href="https://support.jp.omsystem.com/en/support/imsg/digicamera/download/software/firm/e1/">Danh sách firmware OM System</a> · <a href="https://explore.omsystem.com/in/en/firmware_update_instructions">Giới hạn của trình cập nhật chính hãng</a> · <a href="https://support.jp.omsystem.com/jp/support/cs/qa/content/006722/index.html">Lưu và nạp cài đặt bằng OM Workspace</a></p>
-    </section>
+<main class="wrap">
 
-    <section id="goi">
-      <h2>2. Kiểm tra gói v0.4c17 trên máy tính</h2>
-      <p>Mở PowerShell trong thư mục repo chứa <code>caduceus.py</code>. Dùng Python 3.10 trở lên. Workspace này đã có gói <code>out/em1mk2-v0.4c17</code>, nên có thể kiểm tra trực tiếp.</p>
-      <pre><code>python caduceus.py verify out/em1mk2-v0.4c17</code></pre>
-      <p>Chỉ dùng gói khi kết quả có <code>All good.</code> và dòng xác nhận khớp <code>releases/em1mk2/v0.4c17/SHA256SUMS</code>. Giữ cả thư mục gói trên máy tính để có thể kiểm lại.</p>
-      <details>
-        <summary>Nếu chưa có gói hoặc cần tạo lại</summary>
-        <p>Chọn đường dẫn đầu ra mới hoặc thư mục trống. Bộ tạo gói dùng tệp 3.7 đã có nếu đúng SHA‑256, hoặc tải từ máy chủ OM. Nếu đã có bản chính hãng đúng hash, có thể thêm <code>--stock "đường-dẫn-tới-tệp.BIN"</code> vào lệnh <code>build</code>. Với macOS/Linux, dùng <code>python3</code> nếu đó là tên lệnh trên máy.</p>
-        <pre><code>python caduceus.py build --camera em1mk2 --release v0.4c17 --out out/em1mk2-v0.4c17-moi
-python caduceus.py verify out/em1mk2-v0.4c17-moi</code></pre>
-        <p>Nếu tạo gói ở đường dẫn khác, dùng chính đường dẫn đó cho các bước còn lại. Nếu hash sai, kiểm tra nguồn tệp và chọn đúng firmware nền đã ghim cho v0.4c17.</p>
-      </details>
-      <dl class="files">
-        <div><dt>Gói cài Caduceus</dt><dd><code>DCOLYMP/E1259999.BIN</code><br>Chép lên thẻ khi cài v0.4c17.</dd></div>
-        <div><dt>Gói về firmware gốc 3.7</dt><dd><code>restore/E1259999.BIN</code><br>Giữ riêng trên máy tính trước khi nạp.</dd></div>
-        <div><dt>Thư viện màu tùy chọn</dt><dd><code>EM1MOD/LOOKS.BIN</code><br>Chép nếu muốn dùng pack đi kèm.</dd></div>
-      </dl>
-      <p>Hai gói firmware cùng tên <code>E1259999.BIN</code>. Luôn đối chiếu <strong>thư mục nguồn</strong> trước khi chép. Tệp <code>E1429999.BIN</code> của PEN E‑P7 chỉ dành cho E‑P7.</p>
-      <p class="sources"><a href="../README.md#install">Hướng dẫn cài đặt trong repo</a> · <a href="../releases/em1mk2/v0.4c17/SHA256SUMS">SHA‑256 của release</a> · <a href="../patches/omdem1mk2/CHANGELOG.md">Ghi chú v0.4c17</a></p>
-    </section>
+<section id="gioi-thieu">
+  <h2>1. Caduceus là gì</h2>
+  <p>Caduceus là bộ <strong>bản vá firmware mã nguồn mở</strong>, làm ban đầu cho PEN E-P7. Repo này đưa nó sang
+    <strong>E-M1 Mark II chạy firmware 3.7</strong>. Repo không chứa firmware của OM: công cụ <code>caduceus.py</code> tải tệp
+    3.7 chính hãng từ máy chủ OM, kiểm tra SHA-256, áp các bản vá đã ghi trong repo, rồi tạo hai tệp:</p>
+  <ul>
+    <li><strong>tệp cài</strong> <code>DCOLYMP/E1259999.BIN</code>: firmware 3.7 đã vá;</li>
+    <li><strong>tệp khôi phục</strong> <code>restore/E1259999.BIN</code>: đúng tệp 3.7 gốc của OM, dùng để quay về.</li>
+  </ul>
+  <p>Máy nạp tệp như một bản cập nhật bình thường, qua thẻ SD, bằng cách giữ <kbd>OK</kbd> khi bật máy.</p>
+  <div class="warning"><strong>Rủi ro.</strong> Nạp firmware sửa đổi có thể làm máy treo, mất dữ liệu hoặc không khởi động
+    được. Bạn tự chịu trách nhiệm. Chỉ dùng cho <strong>E-M1 Mark II nền 3.7</strong>. Không nạp bản của E-P7, OM-3 hay máy
+    khác.</div>
+  <div class="ok"><strong>Mức độ đã kiểm chứng.</strong> v0.4c13 và v0.4c15 đã chạy trên máy thật: tỷ lệ 65:24 / 21:9, AF,
+    look từ thẻ. v0.4c24 đã qua 21 bước kiểm tra trên trình giả lập CPU của máy:
+    <ul>
+      <li>đóng gói lại từ tệp gốc khớp từng byte, và tệp khôi phục giống hệt tệp OM;</li>
+      <li>vùng nhớ mới không xung đột với firmware gốc;</li>
+      <li>ở Halo Off, việc chụp ảnh đi đúng đường của firmware gốc.</li>
+    </ul>
+    v0.4c24 <strong>chưa được nạp vào máy thật</strong>. Hãy làm đúng các bước sao lưu bên dưới.</div>
+</section>
 
-    <section id="the-sd">
-      <h2>3. Chuẩn bị thẻ SD</h2>
-      <ol>
-        <li>Dùng thẻ mà máy ảnh đã đọc được. Cắm thẻ vào đầu đọc và mở <strong>gốc thẻ</strong>, cùng cấp với <code>DCIM/</code>. Tạo thư mục <code>DCOLYMP</code> nếu chưa có. Nếu thư mục có tệp cập nhật cũ, chuyển chúng sang máy tính.</li>
-        <li>Chép <strong>từ thư mục <code>DCOLYMP</code> của gói cài</strong> vào <code>DCOLYMP</code> trên thẻ. Trên thẻ chỉ để một tệp cập nhật, đúng tên <code>E1259999.BIN</code>. Bật hiển thị đuôi tệp để tránh <code>.BIN.BIN</code> hoặc tên có <code>(1)</code>.</li>
-        <li>Nếu thẻ đã có pack riêng, giữ <code>EM1MOD/LOOKS.BIN</code> đang dùng. Với thẻ mới, có thể thêm pack đi kèm hoặc bắt đầu bằng các look tích hợp. <strong>Ngoại lệ:</strong> tệp <code>LOOKS.BIN</code> của bản v0.1–v0.3 (định dạng cũ <code>EM1B</code>, đúng 2.080 byte) không đọc được trên v0.4c17 và sẽ báo <code>CF.1</code>. Thay nó bằng pack đi kèm hoặc pack mới xuất từ Control Panel. Lệnh cài một bước của <code>caduceus.py</code> cũng tự thay tệp không đọc được và in thông báo.</li>
-      </ol>
-      <pre><code>Gốc thẻ SD/
+<section id="tinh-nang">
+  <h2>2. Repo này làm được gì</h2>
+  <p>Nhãn: <span class="tag c">đã chạy trên máy</span> <span class="tag e">kiểm trên giả lập</span>
+    <span class="tag n">chưa thử</span>.</p>
+  <div class="table"><table>
+    <thead><tr><th>Tính năng</th><th>Làm gì</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+      <tr><td>Bỏ giới hạn quay video</td><td>Một đoạn quay được tới 9 giờ, thay vì 29 phút.</td><td><span class="tag c">từ v0.1</span></td></tr>
+      <tr><td>Focus stacking với mọi ống kính</td><td>Bỏ danh sách chỉ cho ống PRO; ống AF bất kỳ đều dùng được Focus Stacking.</td><td><span class="tag c">từ v0.1</span></td></tr>
+      <tr><td>Look phim trong Color Creator</td><td>16 look có sẵn (Provia … Acros), màu theo 12 vùng sắc độ, tone sáng/trung/tối, chỉnh Chroma, Highlights/Shadows, cường độ x1–x3.</td><td><span class="tag c">v0.3b5</span></td></tr>
+      <tr><td>Look từ thẻ</td><td>Đọc tối đa 32 look trong <code>EM1MOD/LOOKS.BIN</code> (cùng định dạng E-P7, tạo bằng Control Panel).</td><td><span class="tag c">v0.4c15: nạp được</span> tên/màu từ thẻ <span class="tag n">chưa xác nhận</span></td></tr>
+      <tr><td>Tỷ lệ 65:24 và 21:9</td><td>Ảnh toàn cảnh 5184×1920 và 5184×2224, có trong Shooting Menu, Super Control Panel, chọn điểm AF.</td><td><span class="tag c">v0.4c13</span></td></tr>
+      <tr><td>Halation (quầng sáng)</td><td>Quầng màu quanh điểm sáng trên ảnh JPEG màu; chỉnh Off/Low/Med/High ở trang Halo.</td><td><span class="tag e">v0.4c24</span> <span class="tag n">chưa thử trên máy</span></td></tr>
+      <tr><td>Watchdog 30 s</td><td>Máy chờ 30 s thay vì 10 s trước khi tự khởi động lại, để ảnh có quầng kịp lưu.</td><td><span class="tag e">v0.4c22t+</span></td></tr>
+      <tr><td>Sharpness tuyến tính</td><td>−2..+2 thành tắt / 25 / 50 / 75 / 100 %. Chỉ có trong bản thử riêng <code>v0.4c19t</code>, không có trong v0.4c24.</td><td><span class="tag e">bản thử</span></td></tr>
+      <tr><td>Chưa có</td><td>B&amp;W thật (look đơn sắc chỉ giảm độ bão hoà), Blacks/Whites, grain, tắt sharpening, NR theo look.</td><td><span class="tag n">chưa port</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>Phía máy tính, repo có:</p>
+  <ul>
+    <li><strong>Control Panel</strong> (thư mục <code>webapp/</code>): tạo, sửa và chia sẻ look, xuất <code>LOOKS.BIN</code> cho E-M1 II;</li>
+    <li><strong>bộ dựng gói</strong> <code>caduceus.py</code>;</li>
+    <li><strong>bộ kiểm tra giả lập</strong> (<code>tools/omdem1mk2_*</code>).</li>
+  </ul>
+</section>
+
+<section id="chuan-bi">
+  <h2>3. Cần chuẩn bị</h2>
+  <ul>
+    <li><strong>Máy E-M1 Mark II ở firmware 3.7.</strong> Kiểm tra ở <kbd>MENU</kbd> → Setup (cờ lê) → <strong>Firmware</strong>,
+      dòng Body. Nếu thấp hơn 3.7, cập nhật bản chính hãng trước bằng OM Workspace
+      (<a href="huong-dan-cap-nhat-firmware-om-workspace.md">hướng dẫn</a>).</li>
+    <li><strong>Pin sạc đầy</strong>, tốt nhất thêm một pin dự phòng.</li>
+    <li><strong>Thẻ SD</strong> máy đã đọc được, lắp ở <strong>khe 1</strong> khi nạp.</li>
+    <li><strong>Máy tính</strong> có <a href="https://www.python.org/downloads/">Python 3.10 trở lên</a> (trên Windows, tích
+      “Add python.exe to PATH” khi cài) và bản sao repo này.</li>
+    <li>Cáp USB và <strong>OM Workspace</strong> để sao lưu cài đặt máy (không bắt buộc nhưng nên làm).</li>
+  </ul>
+</section>
+
+<section id="sao-luu">
+  <h2>4. Sao lưu trước khi nạp</h2>
+  <h3>4.1 Cài đặt của máy</h3>
+  <ol>
+    <li>Tắt máy, rút thẻ, nối cáp USB, bật máy, chọn <strong>Storage</strong> trên màn hình máy.</li>
+    <li>Trong OM Workspace: <strong>Camera → Custom Settings → Save</strong>, chọn các nhóm cài đặt, lưu tệp vào máy tính.</li>
+    <li>Ghi lại thêm bằng tay các mục quan trọng: C1/C2/C3, nút tuỳ chỉnh, AF.</li>
+  </ol>
+  <h3>4.2 Ảnh và thư mục trên thẻ</h3>
+  <p>Chép toàn bộ ảnh, video và thư mục <code>EM1MOD/</code> (nếu có) sang máy tính. Mở thử vài tệp để chắc bản sao đọc
+    được. Chỉ định dạng thẻ sau khi đã kiểm tra bản sao.</p>
+  <h3>4.3 Giữ đường quay về</h3>
+  <ul>
+    <li>Sau bước 5 bạn sẽ có <code>restore/E1259999.BIN</code>, là tệp 3.7 gốc của OM. <strong>Giữ nó trên máy tính</strong>
+      trước khi nạp.</li>
+    <li>Nếu máy đang chạy một bản Caduceus cũ, giữ lại cả thư mục gói của bản đó (có <code>DCOLYMP/</code> và
+      <code>SHA256SUMS</code>).</li>
+    <li>v0.4c15 trở về trước dựng trên một tệp 3.7 cũ (<code>f0c25dd8…</code>), tệp này không còn tải được. Muốn quay về các
+      bản đó thì phải còn giữ gói đã dựng sẵn.</li>
+  </ul>
+  <p>Repo không đọc ngược được firmware đang nằm trong máy. Vì thế tệp khôi phục là bản 3.7 chính hãng, không phải bản
+    sao của máy bạn.</p>
+</section>
+
+<section id="tao-goi">
+  <h2>5. Tạo gói firmware trên máy tính</h2>
+  <p>Mở PowerShell (Windows) hoặc Terminal (macOS/Linux) trong thư mục repo, nơi có <code>caduceus.py</code>. Trên
+    macOS/Linux, thay <code>python</code> bằng <code>python3</code> nếu cần.</p>
+  <pre>python caduceus.py build --camera em1mk2 --release v0.4c24 --out out/em1mk2-v0.4c24
+python caduceus.py verify out/em1mk2-v0.4c24</pre>
+  <ul>
+    <li>Lệnh <code>build</code> tải tệp 3.7 từ máy chủ OM. Nếu đã có tệp đúng hash, thêm
+      <code>--stock "đường-dẫn\OLY_E_125_3700_0000_0000.BIN"</code>.</li>
+    <li>Thư mục <code>--out</code> phải mới hoặc trống.</li>
+    <li>Chỉ dùng gói khi <code>verify</code> báo <strong>All good.</strong> và có dòng khớp
+      <code>releases/em1mk2/v0.4c24/SHA256SUMS</code>.</li>
+  </ul>
+  <dl class="files">
+    <div><dt>Tệp cài</dt><dd><code>DCOLYMP/E1259999.BIN</code><br>Chép lên thẻ để nạp.</dd></div>
+    <div><dt>Pack look đi kèm</dt><dd><code>EM1MOD/LOOKS.BIN</code><br>16 look, chép nếu muốn dùng.</dd></div>
+    <div><dt>Tệp khôi phục</dt><dd><code>restore/E1259999.BIN</code><br>Firmware gốc. <strong>Giữ trên máy tính</strong>, không chép lên thẻ.</dd></div>
+  </dl>
+  <p class="warning">Hai tệp firmware cùng tên <code>E1259999.BIN</code>. Luôn xem kỹ bạn đang chép từ <code>DCOLYMP/</code>
+    hay <code>restore/</code>. Tệp <code>E1429999.BIN</code> là của PEN E-P7: không dùng cho E-M1 II.</p>
+</section>
+
+<section id="chep-the">
+  <h2>6. Chép lên thẻ SD</h2>
+  <ol>
+    <li>Cắm thẻ vào máy tính, mở <strong>gốc thẻ</strong> (cùng cấp với <code>DCIM/</code>).</li>
+    <li>Tạo thư mục <code>DCOLYMP</code> nếu chưa có. Chuyển các tệp cập nhật cũ trong đó ra máy tính.</li>
+    <li>Chép <code>DCOLYMP/E1259999.BIN</code> từ gói vào <code>DCOLYMP</code> trên thẻ. Trên thẻ chỉ để đúng một tệp
+      cập nhật. Bật hiển thị đuôi tệp để tránh tên kiểu <code>.BIN.BIN</code> hay <code>(1)</code>.</li>
+    <li>Tuỳ chọn: chép <code>EM1MOD/LOOKS.BIN</code>. Nếu thẻ đã có pack riêng, cứ giữ pack đó. Riêng tệp
+      <code>LOOKS.BIN</code> cũ dài đúng 2.080 byte (định dạng <code>EM1B</code> của v0.1–v0.3) thì máy không đọc được và
+      báo <code>CF.1</code>: thay nó bằng pack mới.</li>
+  </ol>
+  <pre>Gốc thẻ SD/
 ├── DCOLYMP/
 │   └── E1259999.BIN
-└── EM1MOD/             (tùy chọn)
-    └── LOOKS.BIN</code></pre>
-      <p>Kiểm tra bản chép lên thẻ trước khi tháo. Trong PowerShell, thay <code>E:</code> bằng ký tự ổ thẻ thật. Hai giá trị <strong>Hash</strong> phải giống nhau. Sau đó chọn <strong>Eject</strong> rồi rút thẻ.</p>
-      <pre><code>Get-FileHash -Algorithm SHA256 -LiteralPath 'E:\DCOLYMP\E1259999.BIN', '.\out\em1mk2-v0.4c17\DCOLYMP\E1259999.BIN'</code></pre>
-    </section>
+└── EM1MOD/            (tuỳ chọn)
+    └── LOOKS.BIN</pre>
+  <p>So hash trước khi rút thẻ. Trong PowerShell, thay <code>E:</code> bằng ổ thẻ của bạn; hai giá trị Hash phải giống nhau:</p>
+  <pre>Get-FileHash -Algorithm SHA256 -LiteralPath 'E:\DCOLYMP\E1259999.BIN', '.\out\em1mk2-v0.4c24\DCOLYMP\E1259999.BIN'</pre>
+  <p>Sau đó Eject rồi rút thẻ.</p>
+</section>
 
-    <section id="nap">
-      <h2>4. Nạp firmware vào thân máy</h2>
-      <ol>
-        <li>Để máy ở <strong>OFF</strong>. Lắp pin đã sạc đầy, cho thẻ đã chuẩn bị vào <strong>khe 1 (Slot 1)</strong> và đóng các nắp.</li>
-        <li>Giữ nút <kbd>OK</kbd> trong lúc gạt công tắc sang <strong>ON</strong>. Quan sát đèn báo hoạt động.</li>
-        <li>Khi đèn sáng liên tục, giữ nguyên máy, pin và thẻ. Chờ đèn chuyển sang <strong>nhấp nháy đều khoảng hai lần mỗi giây</strong>, dấu hiệu quá trình nạp đã hoàn tất theo hướng dẫn của repo.</li>
-        <li>Sau khi thấy đúng trình tự đèn, gạt sang <strong>OFF</strong>. Lấy thẻ ra và xóa riêng <code>DCOLYMP/E1259999.BIN</code> trên thẻ bằng máy tính. Giữ <code>EM1MOD</code>, ảnh và các bản sao trên máy tính. Eject thẻ, lắp lại và bật máy bình thường.</li>
-      </ol>
-      <p class="warning"><strong>Trong lúc đèn sáng liên tục hoặc trạng thái ghi chưa rõ, giữ nguyên nguồn.</strong> Không tắt máy, mở nắp pin, tháo pin hoặc rút thẻ. Nếu đèn có diễn biến khác, xem mục <a href="#loi">xử lý lỗi</a>.</p>
-      <p class="sources"><a href="PORT_EM1MK2.md#sd-card-deployment">Quy trình nạp qua SD của repo</a></p>
-    </section>
+<section id="nap">
+  <h2>7. Nạp firmware vào máy</h2>
+  <ol>
+    <li>Để máy ở <strong>OFF</strong>. Lắp pin đầy, cho thẻ vào <strong>khe 1</strong>, đóng mọi nắp.</li>
+    <li>Giữ <kbd>OK</kbd> trong khi gạt công tắc sang <strong>ON</strong>.</li>
+    <li>Đèn báo <strong>sáng liên tục</strong> là máy đang đọc và ghi. Không đụng vào máy.</li>
+    <li>Đèn chuyển sang <strong>nhấp nháy đều khoảng 2 lần mỗi giây</strong> là đã xong.</li>
+    <li>Gạt OFF. Lấy thẻ ra, xoá <code>DCOLYMP/E1259999.BIN</code> trên thẻ bằng máy tính (giữ <code>EM1MOD</code>), lắp lại
+      và bật máy bình thường.</li>
+  </ol>
+  <p class="warning"><strong>Khi đèn đang sáng liên tục:</strong> không tắt máy, không mở nắp pin, không rút thẻ. Nếu đèn nháy
+    nhanh ngay từ đầu, không có pha sáng liên tục, nghĩa là máy từ chối tệp và chưa ghi gì. Khi đó kiểm tra lại tên tệp,
+    đường dẫn và hash.</p>
+  <p>Trước khi ghi, máy tự kiểm tra checksum của mọi phần trong gói, nên một tệp hỏng sẽ bị từ chối. Gói Caduceus chỉ sửa
+    phần firmware chính; bốn phần còn lại, gồm cả chương trình cập nhật của máy, giữ nguyên byte gốc của OM.</p>
+</section>
 
-    <section id="kiem-tra">
-      <h2>5. Kiểm tra sau khi nạp</h2>
-      <ol>
-        <li>Kiểm tra máy khởi động, vào menu, chụp và xem lại một ảnh JPEG ở tỷ lệ <strong>4:3</strong>. <strong>Body 3.7</strong> là phiên bản nền, nên dùng các tính năng bên dưới để xác nhận bản vá hoạt động.</li>
-        <li>Chọn <strong>Color Creator</strong> trong <strong>Picture Mode</strong>. Nếu có pack trên thẻ, nhấn nửa cò một lần trước khi mở Color Creator. Kiểm tra tên look và màu thay đổi. Nếu <code>C1.n</code> xuất hiện khi trình chỉnh sửa đã mở, thoát rồi mở lại để chọn look đầu tiên từ thẻ.</li>
-        <li>Kiểm tra <strong>65:24</strong> hoặc <strong>21:9</strong> ở <strong>Shooting Menu 1 → Image Aspect</strong> và ở ô tỷ lệ khung trên <strong>Super Control Panel</strong> (biểu tượng 65:24 / 21:9). Chọn điểm AF ở tỷ lệ mới. Chụp và xem lại một ảnh: 65:24 cho 5184×1920, 21:9 cho 5184×2224. Quay thử một đoạn ngắn nếu cần dùng video.</li>
-        <li>Đọc dòng trạng thái dưới cùng của Color Creator: <code>C1.n</code> đã nạp pack từ thẻ (n = số lần thử), <code>C0.n</code> còn đang thử (nhấn nửa cò thêm lần nữa), <code>CF.8</code> không có <code>LOOKS.BIN</code>, <code>CF.1</code> tệp lỗi hoặc định dạng cũ. <code>K…</code> là mã look đang chọn (thêm <code>+</code> khi đã áp dụng). <code>Exx</code> nghĩa là máy từ chối một lần ghi cài đặt; ghi lại mã này khi báo lỗi.</li>
-      </ol>
-      <p>Các phần sau <strong>chưa được thử trên máy thật</strong>, nên nếu có thời gian hãy thử và ghi lại kết quả: khung hình 65:24 / 21:9 trên live view và khi xem lại ngay sau chụp, RAW+JPEG ở tỷ lệ mới, tắt mở máy khi đang chọn 65:24 / 21:9, dải Live Control, AF tracking / AUTO, lưới hiển thị, và look chọn trước khi tắt máy có được giữ lại không.</p>
-      <p class="sources"><a href="../README.md#using-it">Cách dùng Color Creator và mã trạng thái</a> · <a href="../plans/2026-11-19-em1-ii-release/phase-02-camera-validation.md">Danh sách kiểm tra trên máy thật</a></p>
-    </section>
+<section id="kiem-tra">
+  <h2>8. Kiểm tra sau khi nạp</h2>
+  <ol>
+    <li>Máy khởi động, vào được menu, chụp và xem lại một ảnh JPEG 4:3.</li>
+    <li><kbd>MENU</kbd> → Setup → Firmware: dòng Body vẫn là <strong>3.7</strong>. Đó là phiên bản nền; Caduceus nhận ra qua
+      các tính năng bên dưới.</li>
+    <li>Picture Mode → <strong>Color Creator</strong>. Nhấn nửa cò một lần, rồi mở trình chỉnh Color Creator: dòng dưới cùng
+      hiện tên look và mã trạng thái (xem <a href="#ma-trang-thai">9.2</a>).</li>
+    <li>Thử 65:24 hoặc 21:9, chọn điểm AF, chụp một ảnh (65:24 cho 5184×1920, 21:9 cho 5184×2224).</li>
+    <li>Thử halation theo <a href="#halation">9.5</a>.</li>
+  </ol>
+  <p>Nếu một bước hỏng, xem <a href="#loi">Xử lý lỗi</a>. Có gì lạ với halation thì chỉ cần đặt Halo về Off, không phải nạp lại.</p>
+</section>
 
-    <section id="khoi-phuc">
-      <h2>6. Khôi phục firmware gốc hoặc bản đã lưu</h2>
-      <ol>
-        <li><strong>Về firmware gốc 3.7.</strong> Kiểm lại gói đã lưu ở mục 2. Lấy tệp <strong><code>restore/E1259999.BIN</code></strong> và chép lên thẻ với đường dẫn <code>DCOLYMP/E1259999.BIN</code>. Nếu dùng lệnh so hash ở mục 3, đổi đường dẫn tệp nguồn sang thư mục <code>restore</code>.</li>
-        <li><strong>Quay về bản Caduceus cũ đã sao lưu.</strong> Dùng tệp cài trong <code>DCOLYMP/</code> từ đúng gói cũ đã kiểm SHA‑256, và pack <code>EM1MOD</code> tương ứng nếu có. Ví dụ, gói cũ <code>out/em1mk2-v0.4c16</code> có thể kiểm bằng <code>python caduceus.py verify out/em1mk2-v0.4c16</code> nếu đó là bản từng dùng. <strong>Lưu ý:</strong> từ v0.4c16 gói được dựng trên tệp 3.7 mà máy chủ OM đang phát (SHA‑256 <code>691a8a8e…</code>). Bản v0.4c15 trở về trước dựng trên một tệp 3.7 cũ hơn (<code>f0c25dd8…</code>) không còn tải được, nên chỉ quay về được các bản đó nếu còn giữ nguyên gói cài đã dựng sẵn.</li>
-        <li>Sau khi chọn <strong>một</strong> trong hai gói, Eject thẻ và lặp lại <a href="#nap">quy trình nạp ở mục 4</a> bằng thẻ khe 1 và pin đầy. Sau khi hoàn tất, dọn tệp nạp trên thẻ và kiểm tra khởi động, chụp ảnh. Khi về bản gốc, kiểm tra <strong>Body 3.7</strong> và xác nhận các mục riêng của Caduceus không còn.</li>
-        <li>Nếu cần nạp lại thiết lập đã lưu, nối USB ở chế độ <strong>Storage</strong>, chọn <strong>Camera → Custom Settings → Load → Load from File</strong> trong OM Workspace. Chọn tệp và nhóm cài đặt, rồi giữ nguyên cáp trong lúc máy khởi động lại.</li>
-      </ol>
-      <p>Khả năng nạp lại phụ thuộc vào việc máy còn vào được chế độ cập nhật SD. Nếu máy không vào được chế độ này hoặc vẫn không khởi động sau khi khôi phục, liên hệ dịch vụ sửa chữa OM System và cung cấp phiên bản đã nạp cùng trình tự đèn.</p>
-      <p class="sources"><a href="../README.md#install">Khôi phục về firmware gốc</a> · <a href="https://support.jp.omsystem.com/jp/support/cs/qa/content/006722/index.html">Nạp lại cài đặt bằng OM Workspace</a></p>
-    </section>
+<section id="su-dung">
+  <h2>9. Cách dùng các tính năng mới</h2>
 
-    <section id="loi">
-      <h2>Xử lý lỗi</h2>
-      <details open>
-        <summary>Đèn không theo trình tự nạp</summary>
-        <p>Nếu đèn còn sáng liên tục hoặc chưa rõ máy có đang ghi, giữ nguyên nguồn và thẻ. Nếu tình trạng kéo dài, ghi lại diễn biến đèn để hỏi hỗ trợ trước khi can thiệp. Khi đã xác nhận máy không ghi, tắt máy rồi kiểm tra pin, khe 1, đường dẫn ở gốc thẻ, tên tệp và SHA‑256. Chỉ thử lại với gói đã kiểm tra.</p>
-      </details>
-      <details>
-        <summary>Máy bật được nhưng không đọc look trên thẻ</summary>
-        <p>Kiểm tra <code>EM1MOD/LOOKS.BIN</code> nằm ở gốc thẻ, sau đó bật lại máy và nhấn nửa cò. <code>C0.n</code> nghĩa là máy vẫn đang thử: nhấn nửa cò thêm vài lần. <code>CF.8</code> báo thiếu tệp, <code>CF.1</code> báo tệp lỗi hoặc tệp định dạng cũ <code>EM1B</code> của v0.1–v0.3 (2.080 byte): thay bằng pack mới. Nếu máy hoạt động bất thường, tắt máy và thử với thẻ không có <code>EM1MOD/</code> để kiểm tra các look tích hợp trước khi tính đến nạp lại firmware.</p>
-      </details>
-      <details>
-        <summary>Màu không đổi, hoặc dòng trạng thái có <code>Exx</code></summary>
-        <p>Look chỉ áp dụng trong Picture Mode <strong>Color Creator</strong>, và chỉ sau khi đã mở trình chỉnh Color Creator một lần kể từ lúc bật máy. <code>Exx</code> nghĩa là máy từ chối ghi một cài đặt: <code>E58</code> khi máy đang bận, <code>E16</code> khi giá trị không hợp lệ. Thoát rồi mở lại Color Creator; nếu mã vẫn xuất hiện, ghi lại mã, look đang chọn và Picture Mode khi báo lỗi.</p>
-      </details>
-      <p class="sources"><a href="https://github.com/xtruong88/caduceus-em1ii/issues">Báo lỗi cho dự án Caduceus E‑M1 II</a></p>
-    </section>
-  </main>
+  <h3>9.1 Look phim trong Color Creator</h3>
+  <p>Look chỉ áp dụng khi Picture Mode là <strong>Color Creator</strong>, và chỉ sau khi bạn đã mở trình chỉnh Color Creator
+    một lần kể từ lúc bật máy. Trong trình chỉnh, <kbd>INFO</kbd> chuyển trang (nút Thùng rác cũng chuyển trang):</p>
+  <div class="table"><table>
+    <thead><tr><th>Trang</th><th>Điều khiển</th><th>Tác dụng</th></tr></thead>
+    <tbody>
+      <tr><td>0 · Film</td><td>Mũi tên trái/phải</td><td>Chọn look: từ thẻ nếu có, không thì 16 look có sẵn. Hai bánh xe vẫn là vòng màu gốc của Color Creator.</td></tr>
+      <tr><td>1 · Chroma</td><td>Trái/phải</td><td>Cộng −5..+5 độ bão hoà cho cả 12 vùng màu (look màu).</td></tr>
+      <tr><td>2 · Luminance</td><td>Bánh trước hoặc trái/phải; bánh sau hoặc lên/xuống</td><td>Highlights; Shadows. Midtones lấy theo look.</td></tr>
+      <tr><td>3 · Strength</td><td>Bánh trước hoặc trái/phải</td><td>Cường độ look x1 → x3 (bão hoà, sắc độ và độ sáng từng vùng).</td></tr>
+      <tr><td>4 · Halo</td><td>Trái/phải</td><td>Off / Low / Med / High (xem 9.5).</td></tr>
+    </tbody>
+  </table></div>
+  <p>16 look có sẵn: Provia, Velvia, Astia, Classic Chrome, Classic Neg, Nostalgic, Reala Ace, Eterna, Bleach Bypass,
+    Kodachrome 64, Portra 400, Ektar 100, Gold 200, Tri-X 400, CineStill 800, Acros. Tên look cũng hiện ở ô Color Creator
+    trên Super Control Panel. Look đơn sắc (Tri-X, Acros) hiện chỉ giảm độ bão hoà, chưa phải B&amp;W thật.</p>
+
+  <h3 id="ma-trang-thai">9.2 Dòng trạng thái của Color Creator</h3>
+  <div class="table"><table>
+    <thead><tr><th>Mã</th><th>Nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td><code>C1.n</code></td><td>Đã nạp pack từ thẻ sau n lần thử.</td></tr>
+      <tr><td><code>C0.n</code></td><td>Đang thử nạp; nhấn nửa cò thêm.</td></tr>
+      <tr><td><code>CF.8</code></td><td>Không có <code>EM1MOD/LOOKS.BIN</code>: dùng 16 look có sẵn.</td></tr>
+      <tr><td><code>CF.1</code></td><td>Tệp lỗi hoặc định dạng cũ <code>EM1B</code>.</td></tr>
+      <tr><td><code>K…</code> / <code>K…+</code></td><td>Mã look đang chọn; dấu <code>+</code> là look đã áp vào ảnh.</td></tr>
+      <tr><td><code>E58</code> / <code>E16</code></td><td>Máy từ chối ghi một cài đặt: đang bận / giá trị không hợp lệ.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Nếu thẻ nạp xong (<code>C1</code>) khi trình chỉnh đang mở, hãy thoát rồi mở lại Color Creator để chuyển sang look đầu
+    tiên của thẻ.</p>
+
+  <h3>9.3 Tạo look riêng bằng Control Panel</h3>
+  <p>Control Panel là trang web chạy trên máy tính, trong thư mục <code>webapp/</code>. Cần
+    <a href="https://nodejs.org/">Node.js</a>:</p>
+  <pre>cd webapp
+npm ci
+npm run dev</pre>
+  <p>Mở <code>http://localhost:5173</code>, chọn máy <strong>E-M1 II</strong>, chỉnh look rồi xuất <code>LOOKS.BIN</code>. Chép
+    tệp vào <code>EM1MOD/</code> ở gốc thẻ, tắt rồi bật máy, nhấn nửa cò. Pack và mã chia sẻ (<code>pk1_…</code>) dùng chung với
+    E-P7, nên một pack E-P7 cũng chạy được. Máy thử đọc thẻ ở khe 1 trước, rồi đến khe 2.</p>
+
+  <h3>9.4 Tỷ lệ 65:24 và 21:9</h3>
+  <p>Chọn ở <strong>Shooting Menu 1 → Image Aspect</strong>, hoặc ô tỷ lệ trên <strong>Super Control Panel</strong>. 65:24 cho
+    ảnh 5184×1920, 21:9 cho ảnh 5184×2224. Điểm AF dùng bố cục của 16:9. Chưa thử trên máy: khung live view và xem lại
+    ngay sau chụp, RAW+JPEG, giữ lựa chọn sau khi tắt máy, Live Control, AF tracking, lưới. Nếu gặp lỗi, đặt về 4:3.</p>
+
+  <h3 id="halation">9.5 Halation (quầng sáng)</h3>
+  <p>Mở Color Creator, nhấn <kbd>INFO</kbd> tới trang <strong>Halo</strong>, dùng trái/phải để chọn
+    <strong>Off / Low / Med / High</strong>. Vừa nạp xong, Halo ở <strong>Off</strong>. Giá trị được nhớ qua lần tắt máy.</p>
+  <ul>
+    <li><strong>Áp cho:</strong> ảnh chụp thường ở các picture mode màu (Vivid, Natural, Color Creator…), ảnh JPEG.</li>
+    <li><strong>Không áp cho:</strong> Monotone, Art Filter, Art Effect, và các chế độ chụp đặc biệt (High Res, HDR,
+      bracketing, Live Composite…). Những ảnh này giữ nguyên như firmware gốc.</li>
+    <li><strong>Màu quầng:</strong> mặc định đỏ. Pack look có ghi màu quầng thì dùng màu đó: amber, warm hoặc cool.</li>
+    <li><strong>Thời gian lưu:</strong> ảnh có quầng lưu lâu hơn bình thường. Cảnh đêm nhiều đèn ước tính khoảng 4–8 s.
+      Watchdog 30 s để máy không tự khởi động lại.</li>
+  </ul>
+  <p><strong>Lần đầu, nên thử như sau:</strong></p>
+  <ol>
+    <li>Cảnh ban ngày không có điểm cháy sáng, tripod, Vivid: chụp một ảnh Halo Off và một ảnh Halo Low. Hai ảnh phải gần
+      như giống nhau. Nếu màu hay độ tương phản khác rõ, để Halo Off và gửi hai ảnh để phân tích.</li>
+    <li>Cảnh đêm có đèn, Halo Med: phải thấy quầng quanh điểm sáng, máy không tự khởi động lại. Ghi lại thời gian lưu.</li>
+    <li>Có gì lạ: đặt Halo về Off, máy chạy như v0.4c17.</li>
+  </ol>
+  <p>Chi tiết: <a href="OMD-EM1-II/thu-may-halation.md">quy trình thử trên máy</a> ·
+    <a href="OMD-EM1-II/HALATION.md">tài liệu kỹ thuật halation</a>.</p>
+
+  <h3>9.6 Quay video dài và focus stacking</h3>
+  <ul>
+    <li><strong>Video:</strong> quay như bình thường; một đoạn không còn dừng ở 29 phút (giới hạn mới 9 giờ). Pin, dung lượng
+      thẻ và nhiệt độ vẫn có thể dừng máy sớm hơn.</li>
+    <li><strong>Focus stacking:</strong> bật như bình thường trong menu Focus Bracketing / Focus Stacking. Giờ dùng được với
+      ống AF bất kỳ (ống Olympus thường, Panasonic, Sigma…), không chỉ ống PRO.</li>
+  </ul>
+</section>
+
+<section id="khoi-phuc">
+  <h2>10. Quay về firmware gốc hoặc bản cũ</h2>
+  <ul>
+    <li><strong>Về firmware gốc 3.7:</strong> chép <code>restore/E1259999.BIN</code> lên thẻ thành
+      <code>DCOLYMP/E1259999.BIN</code>, rồi nạp như mục 7. Sau đó kiểm tra Body 3.7 và các mục Caduceus đã mất.</li>
+    <li><strong>Về một bản Caduceus khác:</strong> dùng tệp trong <code>DCOLYMP/</code> của gói bản đó (đã
+      <code>verify</code>), nạp như mục 7.</li>
+    <li><strong>Nạp lại cài đặt:</strong> nối USB ở chế độ Storage, trong OM Workspace chọn
+      <strong>Camera → Custom Settings → Load → Load from File</strong>.</li>
+  </ul>
+  <p class="warning">Nếu máy treo hoặc khởi động lại liên tục: tháo pin, lắp lại, giữ <kbd>OK</kbd> và bật máy với thẻ chứa tệp
+    khôi phục. Cách này đã cứu được một chiếc PEN E-P7, nhưng trên E-M1 II chưa ai thử. Nếu máy không vào được chế độ
+    cập nhật, liên hệ dịch vụ sửa chữa OM System và cho họ biết bản đã nạp cùng diễn biến đèn.</p>
+</section>
+
+<section id="loi">
+  <h2>11. Xử lý lỗi và câu hỏi thường gặp</h2>
+  <details><summary>Đèn không theo trình tự nạp</summary>
+    <p>Còn sáng liên tục, hoặc chưa rõ máy có đang ghi: giữ nguyên nguồn và thẻ. Khi chắc máy không ghi nữa, tắt máy và
+      kiểm tra: pin, khe 1, đường dẫn <code>DCOLYMP/</code> ở gốc thẻ, tên tệp, SHA-256. Chỉ thử lại với gói đã
+      <code>verify</code>.</p></details>
+  <details><summary>Máy bật nhưng không đọc look trên thẻ</summary>
+    <p><code>C0.n</code>: nhấn nửa cò thêm vài lần. <code>CF.8</code>: thiếu tệp, kiểm tra <code>EM1MOD/LOOKS.BIN</code> ở gốc
+      thẻ. <code>CF.1</code>: tệp lỗi hoặc định dạng cũ, thay bằng pack mới. Nếu máy chạy bất thường, thử thẻ không có
+      <code>EM1MOD/</code>: máy sẽ dùng 16 look có sẵn.</p></details>
+  <details><summary>Màu không đổi khi chọn look</summary>
+    <p>Look chỉ áp ở Picture Mode Color Creator, sau khi đã mở trình chỉnh một lần. Xem dòng trạng thái: không có
+      <code>K…</code> thì nhấn nửa cò rồi mở lại; có <code>K…</code> mà thiếu <code>+</code> thì ghi lại mã khi báo lỗi.</p></details>
+  <details><summary>Không thấy quầng sáng</summary>
+    <p>Kiểm tra trang Halo không ở Off, picture mode là chế độ màu thường (không phải Monotone hay Art Filter), và cảnh có
+      điểm sáng mạnh. Trên giả lập, vùng nhớ ảnh của máy nằm trong dải mà mã vẽ quầng xử lý được, nên quầng phải hiện. Nếu
+      vẫn không thấy, gửi ảnh mẫu kèm thông số.</p></details>
+  <details><summary>Tôi có cần nạp lần lượt nhiều bản không?</summary>
+    <p>Không. Với người dùng, nạp <strong>một lần v0.4c24</strong> là đủ. Các bản thử từng bước (v0.4c17 → v0.4c22t →
+      v0.4c23t) chỉ dùng khi cần tìm phần nào gây lỗi.</p></details>
+  <details><summary>Firmware screen vẫn ghi 3.7, có phải chưa nạp?</summary>
+    <p>Bình thường: Caduceus giữ nguyên số phiên bản. Hãy kiểm tra bằng các tính năng: dòng trạng thái Color Creator, tỷ lệ
+      65:24, trang Halo.</p></details>
+</section>
+
+<section id="cac-ban">
+  <h2>12. Các bản trong repo</h2>
+  <div class="table"><table>
+    <thead><tr><th>Bản</th><th>Dùng khi nào</th></tr></thead>
+    <tbody>
+      <tr><td><strong>v0.4c24</strong></td><td><strong>Nên dùng.</strong> Mọi tính năng ở mục 2 cộng halation, Halo mặc định Off.</td></tr>
+      <tr><td>v0.4c17</td><td>Bản nền không có halation. Dùng để quay về nếu không muốn halation.</td></tr>
+      <tr><td>v0.4c22t</td><td>Bản thử chẩn đoán: đi đường xử lý mới nhưng không vẽ quầng. Chỉ dùng khi tìm lỗi.</td></tr>
+      <tr><td>v0.4c23t</td><td>Bản thử: quầng cố định ở mức Med. Chỉ dùng khi tìm lỗi.</td></tr>
+      <tr><td>v0.4c19t</td><td>Bản thử Sharpness tuyến tính, không có halation.</td></tr>
+      <tr><td>v0.4c13 / v0.4c15</td><td>Bản cũ đã chạy trên máy, dựng trên tệp 3.7 cũ không còn tải được.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Có thể xem danh sách bằng <code>python caduceus.py list --camera em1mk2</code>.</p>
+  <p class="sources">Tài liệu liên quan:
+    <a href="../README.md">README</a> ·
+    <a href="../patches/omdem1mk2/CHANGELOG.md">Changelog E-M1 II</a> ·
+    <a href="PORT_EM1MK2.md">Ghi chú port</a> ·
+    <a href="OMD-EM1-II/thu-may-halation.md">Quy trình thử halation</a> ·
+    <a href="huong-dan-cap-nhat-firmware-om-workspace.md">Cập nhật firmware chính hãng bằng OM Workspace</a> ·
+    <a href="FIRMWARE_GUIDE.md">Firmware guide (tiếng Anh)</a></p>
+</section>
+
+</main>
 </body>
 </html>
