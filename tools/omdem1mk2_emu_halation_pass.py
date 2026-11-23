@@ -7,7 +7,9 @@ hl_pass runs on fabricated 0x0302 records and buffers with the camera's own mapp
 setter 0x60068b88 from the image; lock / unlock / flush / log are the counting fixtures of tools/emu_fixtures/em1_mapper_stubs.s,
 malloc / free the bump allocator tools/emu_fixtures/em1_halation_alloc.s. The window registers and mode table are memory.
   M  the photo == tools/omdem1mk2_halation_model.py bit for bit: every stage x tint on a direct buffer (0xa...), a windowed
-     buffer (0xc8...) and one whose rows cross the 0xd0000000 bucket edge (two window pieces per row); padding untouched
+     buffer (0xc8...) and one whose rows cross the 0xd0000000 bucket edge (two window pieces per row); and where the
+     camera puts the record (tools/omdem1mk2_emu_image_heap.py): both image heap bases 0x8dc64e00 / 0x9b758800 and rows
+     crossing 0x90000000 and 0x98000000 (0xb8 window); padding untouched
   C  coverage cap (daylight) and a frame without highlights: photo untouched (no write pass)
   F  each malloc failing in turn, a bad format, a bus address below 0x84000000: photo untouched
   always: every malloc freed, locks == unlocks, the window mode left as it was, sp / a2 / a3 restored
@@ -101,7 +103,13 @@ def main():
     env = build()
     pic = HM.scene(W, H, PITCH, LIGHTS)
     n = 0
-    for bus, label in ((0xA3000000, 'direct'), (0xC8001000, 'windowed'), (0xCFFF8000, 'crossing 0xd0000000')):
+    # The last four are where the camera puts a full-size record: the mode-0 image heaps 0x8dc64e00..0x9f5e7400 and
+    # 0x9b758800..0x9f5e7400 (pool creation 0x60411597 / 0x604115b6, chosen by 0x604111b7 through 0x60553370), reached
+    # from the job callback op 19 (0x6041f8ae -> 0x6041fcf6 -> 0x6041febc -> 0x604254fe mode 0 -> 0x60411126).
+    for bus, label in ((0xA3000000, 'direct'), (0xC8001000, 'windowed'), (0xCFFF8000, 'crossing 0xd0000000'),
+                       (0x8DC64E00, 'camera heap base'), (0x8FFF8000, 'camera heap, crossing 0x90000000'),
+                       (0x97FF8000, 'camera heap, crossing 0x98000000 (0xb8 window)'),
+                       (0x9B758800, 'second camera heap base (0xb8 window)')):
         for stage in (1, 2, 3):
             for tint in (1, 2, 3, 4):
                 want, cnt = HM.model(pic, W, H, PITCH, stage, tint)

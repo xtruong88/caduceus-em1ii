@@ -80,9 +80,9 @@ Bản này giống v0.4c22t, chỉ thêm phần vẽ quầng.
 - Monotone, Art Filter, Art Effect, chụp liên tiếp, High Res và HDR vẫn chạy như bản gốc;
 - máy **không tự khởi động lại**. Ghi lại thời gian lưu một ảnh cảnh đêm (ước tính khoảng 4–8 s; giới hạn watchdog 30 s).
 
-Nếu không thấy quầng nhưng máy vẫn chạy bình thường, nhiều khả năng địa chỉ bộ nhớ ảnh của máy nằm ngoài dải mà mã vẽ
-quầng chấp nhận. Mã sẽ bỏ qua và để nguyên ảnh: an toàn nhưng không có quầng. Trên giả lập chưa biết được địa chỉ thật
-này. Nếu gặp trường hợp đó, bước tiếp theo là làm một bản chẩn đoán.
+Địa chỉ bộ nhớ ảnh thật đã được xác định trên giả lập bằng chính mã của máy. Ảnh nằm trong vùng nhớ ảnh
+`0x8dc64e00..0x9f5e7400`, thuộc dải mà mã vẽ quầng xử lý được, và mã vẽ quầng đã chạy đúng từng bit ở các địa chỉ đó. Nếu
+vẫn không thấy quầng trong khi máy chạy bình thường, ghi lại cảnh chụp và thông số để phân tích.
 
 ## Bước 4: v0.4c24 (ứng viên phát hành)
 

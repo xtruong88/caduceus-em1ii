@@ -316,6 +316,12 @@ SYS code. Cost: a real hang restarts after up to 30 s instead of 10 s.
     end-getter stub uses an address in `0x612e7000..0x61300000` as an operand; the 32 branch-shaped hits are data decoded
     as code (stock never loads the gap, so a real branch there would crash stock). Camera order and pass criteria
     (Vietnamese, one flash of v0.4c24 recommended): [thu-may-halation.md](thu-may-halation.md).
-  - **Not knowable in the emulator:** the bus address the camera gives record 0x1000. The fixture uses 0x8c000000;
-    `hl_pass` refuses below 0x84000000 and then leaves the photo untouched. No glow on v0.4c23t with an otherwise normal
-    camera points there first.
+  - **Where the camera puts record 0x1000 [E] (`tools/omdem1mk2_emu_image_heap.py`):** the development allocates it
+    through the job callback op 19 (`0x6038bb47` → `0x60380399` → capture callback `0x6041f8ae`, table `0x605569d8` →
+    `0x6041fcf6`). For kind 0x1000, `+81` = 0 and `+76` = 0x1000, so `0x6041febc` allocates in mode 0 (`0x604254fe` →
+    `0x60411126` → `0x604111b7`) from image heap 0 or 1 (table `0x60553370`, chosen by the heap mode `0xa26d4f84`). The
+    init `0x6041157a` (init table `0x6058017c`) creates them with fixed constants: `0x8dc64e00` + 281 MB and
+    `0x9b758800` + 62.5 MB, both ending at `0x9f5e7400`. The camera's own init and allocator, emulated, return
+    `0x8dc64e00` / `0x9b758800` for the 40 MB record. Both heaps lie inside 0x84000000..0x9fffffff, which `hl_pass` maps
+    through the window, so the pass does run on the camera. `emu_halation_pass` now also runs it bit-exact at both heap
+    bases and across the 0x90000000 and 0x98000000 (0xb8 window) edges (84 model cases).
