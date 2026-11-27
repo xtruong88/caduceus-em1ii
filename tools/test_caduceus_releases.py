@@ -17,6 +17,16 @@ from caduceus import (
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_list_marks_recommended_test_and_old_stock_releases(self):
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(caduceus.main(['list']), 0)
+        lines = output.getvalue().splitlines()
+        self.assertIn('em1mk2/v0.4c24 (recommended)', lines)
+        self.assertIn('em1mk2/v0.4c27t (test)', lines)
+        self.assertIn('em1mk2/v0.4c13 (requires old stock)', lines)
+        self.assertIn('em1mk2/v0.4c15 (requires old stock)', lines)
+        self.assertIn('em1mk2/v0.4c17', lines)
+
     def test_easy_pins_recommended_em1_release_even_with_a_newer_release(self):
         available = releases('em1mk2') + ['em1mk2/v0.4c28']
         self.assertIn('em1mk2/v0.4c27t', available)

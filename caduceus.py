@@ -602,8 +602,18 @@ def cmd_list(a):
     if not rels:
         print(f"No releases found{' for ' + cam_filter if cam_filter else ''}.")
         return 0
-    for r in rels:
-        print(r)
+    for name in rels:
+        labels = []
+        if name == f'{INSTALL_CAMERA}/{RECOMMENDED_RELEASE}':
+            labels.append('(recommended)')
+        if name.endswith('t'):
+            labels.append('(test)')
+        if name.startswith(f'{INSTALL_CAMERA}/'):
+            directory, cam = find_release_dir(name, cam_filter)
+            spec = json.loads((directory / 'edits.json').read_text())
+            if release_stock_hash(spec, cam) != EM1MK2_CATALOG_STOCK_SHA:
+                labels.append('(requires old stock)')
+        print(name, *labels)
     return 0
 
 
@@ -842,7 +852,8 @@ def main(argv=None):
                                  description='Build Caduceus firmware files for the Olympus OM-D E-M1 Mark II.')
     ap.add_argument('--camera', choices=[INSTALL_CAMERA], default=INSTALL_CAMERA)
     ap.add_argument('--release', help=f'one-press release (default: {RECOMMENDED_RELEASE})')
-    ap.add_argument('--sd', help='one-press SD card root (for example E: or /Volumes/CAMERA)')
+    ap.add_argument('--sd', help='one-press SD card root (for example E: or /Volumes/CAMERA). '
+                                 'Copying requires confirmation in an interactive terminal.')
     license_help = 'confirm acceptance of the OM firmware license for unattended downloads'
     ap.add_argument('--accept-license', action='store_true', help=license_help)
     sub = ap.add_subparsers(dest='cmd')

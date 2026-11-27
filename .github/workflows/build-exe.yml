@@ -64,7 +64,7 @@ jobs:
           & $exe --help
           $sourceReleases = python package/caduceus.py list
           $exeReleases = & $exe list
-          if ($exeReleases -cnotcontains "em1mk2/$release" -or (Compare-Object $sourceReleases $exeReleases)) {
+          if ($exeReleases -cnotcontains "em1mk2/$release (recommended)" -or (Compare-Object $sourceReleases $exeReleases)) {
             throw 'The executable release list differs from the source package.'
           }
           python package/caduceus.py build --release $release --accept-license --out out/python
@@ -93,7 +93,7 @@ jobs:
             $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath "dist/$name").Hash.ToLowerInvariant()
             "$hash  $name"
           }
-          Set-Content -LiteralPath dist/SHA256SUMS -Value $lines -Encoding ascii
+          [IO.File]::WriteAllText((Join-Path $PWD 'dist/SHA256SUMS'), ($lines -join "`n") + "`n")
 
       - uses: actions/upload-artifact@v4
         with:

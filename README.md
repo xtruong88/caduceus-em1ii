@@ -118,8 +118,9 @@ and **Python 3.10+** on your computer (Windows: [python.org](https://www.python.
 "Add python.exe to PATH"). No compiler or other tool is needed.
 
 To specify the card in one-press mode, use `caduceus-build.exe --sd E:`, replacing `E:` with your drive.
-The Python launchers accept the same option. For automated downloads, use `--accept-license` only after reading
-and accepting the OM licence.
+The Python launchers accept the same option. Copying requires confirmation in an interactive terminal.
+For automated downloads, use `--accept-license` only after reading and accepting the OM licence.
+For versions marked `(requires old stock)` by `list`, supply the matching local firmware with `build --stock`.
 
 1. **Update to official 3.7 first** if the camera shows an older version (OM Workspace; see the Vietnamese guide above).
 2. **Get this repository:** `git clone https://github.com/xtruong88/caduceus-em1ii`, or download the

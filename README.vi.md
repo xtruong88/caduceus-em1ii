@@ -115,8 +115,9 @@ tính (Windows: tải ở [python.org](https://www.python.org/downloads/), nhớ
 trình biên dịch hay công cụ nào khác.
 
 Để chỉ định ổ thẻ trong chế độ cài nhanh, chạy `caduceus-build.exe --sd E:` và thay `E:` bằng ổ thẻ của bạn.
-Các launcher Python cũng nhận tùy chọn này. Với tác vụ tự động, dùng `--accept-license` sau khi đã đọc và đồng ý
-với giấy phép OM.
+Các launcher Python cũng nhận tùy chọn này. Chương trình vẫn yêu cầu xác nhận trong terminal tương tác trước khi chép.
+Với tác vụ tự động, dùng `--accept-license` sau khi đã đọc và đồng ý với giấy phép OM.
+Với bản có nhãn `(requires old stock)` trong `list`, dùng `build --stock` kèm đúng tệp firmware gốc cũ.
 
 1. **Cập nhật lên firmware gốc 3.7 trước** nếu máy đang ở bản cũ hơn (dùng OM Workspace, xem hướng dẫn ở trên).
 2. **Tải repo này:** `git clone https://github.com/xtruong88/caduceus-em1ii`, hoặc bấm **Code › Download ZIP** (hoặc
