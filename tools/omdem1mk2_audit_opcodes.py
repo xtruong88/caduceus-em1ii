@@ -7,7 +7,7 @@ import tempfile
 
 FAILS = 0
 
-def audit_code(name, vma, code_bytes, stop_addr=None):
+def audit_code(name, vma, code_bytes, stop_addr=None, allow_mul_div=False):
     cmd = [
         '/home/hertzel/ep7fw-toolchains/mn10300/bin/mn10300-elf-objdump',
         '-D', '-b', 'binary', '-m', 'am33-2',
@@ -91,7 +91,23 @@ def audit_code(name, vma, code_bytes, stop_addr=None):
     for a, i, r in call_bad:
         print(f"    {a:#x}: {i}  first ret after target: {r[1] if r else 'none'}" + (f" at {r[0]:#x}" if r else ''))
     global FAILS
-    FAILS += len(fb_lines) + len(mul_div_lines) + len(loop_lines) + len(store_lines) + len(call_bad) + len(clr_a)
+    if allow_mul_div and mul_div_lines:
+        print('  (mul/div allowed here: see GAP_CODE)')
+    FAILS += (len(fb_lines) + (0 if allow_mul_div else len(mul_div_lines)) + len(loop_lines) + len(store_lines)
+              + len(call_bad) + len(clr_a))
+
+# Release-only code blocks audited when the spec carries them: (name, address, mul/div allowed).
+# mul/div are banned because they overwrite MDR, which a hook leaving by `retf` needs. Halation's mul is in hl_ob
+# (entered from the Soft Focus work list; it calls hl_pass, which resets MDR, then jumps to the stock blur, which
+# leaves by `ret`) and in hl_pass's pixel loops (left by `ret`); hl_flag, the converter hook every still passes, has
+# none. Halo page, look memory, look WB and the AF stubs allow none.
+GAP_CODE = (
+    ('halation', '0x612e7000', True),
+    ('halo_page_and_lookmem_save', '0x612f0000', False),
+    ('lookmem_restore', '0x612f0800', False),
+    ('look_wb', '0x612f1000', False),
+    ('aspect_af_stubs', '0x605d2ec0', False),
+)
 
 # With a release spec, inspect the code that will actually ship. Without one,
 # keep standalone audits of the individual patches, including the debug logger.
@@ -128,6 +144,12 @@ for patch, name, addr, marker in patches:
     else:
         offset = code.find(marker) if marker else -1
         audit_code(name, addr, code, stop_addr=addr + offset if offset != -1 else None)
+
+if release is not None:
+    for name, addr, allow_mul_div in GAP_CODE:
+        code = next((e for e in release if e.get('kind', '0x100') == '0x100' and e['addr'] == addr), None)
+        if code is not None:
+            audit_code(name, int(addr, 16), bytes.fromhex(code['new']), allow_mul_div=allow_mul_div)
 
 if FAILS:
     print(f'AUDIT FAILED: {FAILS} finding(s)')

@@ -316,6 +316,17 @@ SYS code. Cost: a real hang restarts after up to 30 s instead of 10 s.
     end-getter stub uses an address in `0x612e7000..0x61300000` as an operand; the 32 branch-shaped hits are data decoded
     as code (stock never loads the gap, so a real branch there would crash stock). Camera order and pass criteria
     (Vietnamese, one flash of v0.4c24 recommended): [thu-may-halation.md](thu-may-halation.md).
+  - **Live marker (resealed v0.4c22t..v0.4c25t, 2026-11-24) [E]:** "stock jobs have job+35 = 0" does not hold for every
+    constructor caller. Of the 11 callers of `0x6038f173`, nine clear params first, but `0x6035d6e4` never writes
+    params+31 (stack garbage) and `0x60d19672` copies byte (23,a2) of another record there. A stray 0xAx byte could then
+    send a job down the Art route or through `hl_pass` with Halo Off. Now `hl_route`, `hl_ob` and `hl_marked` all ask
+    `hl_live` (hl_flag.s): the marker counts only when its stage bits (1..3) equal the current Halo stage, read by the same
+    `hl_stage` routine that `hl_flag` uses. Halo Off therefore keeps every job on the stock paths, whatever byte is
+    there. `hl_route` keeps MDR, d1, a0, a1 and sp as the hooked call left them for both builders. `emu_halation_route`
+    adds: Halo Off with every 0xA0..0xAF → stock builder; a marker of another stage → stock; `hl_ob` with Halo Off on a
+    job carrying 0xA2 = stock blur, `hl_pass` never entered; combiners stock for a marker of another stage.
+    `omdem1mk2_audit_opcodes.py` now also audits the code in the gap (halation, Halo page + look-memory save, look-memory
+    restore, aspect stubs).
   - **Where the camera puts record 0x1000 [E] (`tools/omdem1mk2_emu_image_heap.py`):** the development allocates it
     through the job callback op 19 (`0x6038bb47` → `0x60380399` → capture callback `0x6041f8ae`, table `0x605569d8` →
     `0x6041fcf6`). For kind 0x1000, `+81` = 0 and `+76` = 0x1000, so `0x6041febc` allocates in mode 0 (`0x604254fe` →

@@ -55,9 +55,13 @@ class Emu(R.Emu):
             code, stop = b'\xfc\xff' + struct.pack('<i', target - V.CALLER) + b'\xcb', V.CALLER + 6
         else:
             code, stop = b'\xdd' + struct.pack('<i', target - V.CALLER) + bytes([mask, frame]) + b'\xcb', V.CALLER + 7
+        return self.run(V.CALLER, stop, dict({'sp': V.SP}, **regs), (Region('caller', V.CALLER, code, 'rx'), *extra))
+
+    def run(self, pc, stop, regs, extra=()):
+        """Execute from `pc` until `stop` with `regs` (must include sp). Same regions, RAM capture and checks as call()."""
         tcb = bytearray(0x1000)
         struct.pack_into('<I', tcb, 4, R.KERN)
-        regions = [Region('caller', V.CALLER, code, 'rx'), Region('stack', V.STACK, bytes(0x1000), 'rw'),
+        regions = [Region('stack', V.STACK, bytes(0x1000), 'rw'),
                    *V.main_regions(self.img),
                    Region('ram', R.RAM[0], self.ram, 'rw', capture=True),
                    Region('ram_unc', R.RAM[0] + 0x40000000, self.ram, 'rw', alias_of='ram'),
@@ -69,9 +73,9 @@ class Emu(R.Emu):
                    Region('data', 0x61F7D540, self.img[0x60258000 - V.B:0x602AE000 - V.B], 'rw'),
                    Region('hwsem', 0x8FDFF000, bytes(0x2000), 'rw'),
                    Region('heap', 0x61A00000, bytes(0x57D000), 'rw'), *extra]
-        r = execute(regions, dict({'sp': V.SP, 'pc': V.CALLER}, **regs), stop, limit=20_000_000)
+        r = execute(regions, dict({'pc': pc}, **regs), stop, limit=20_000_000)
         if r['fault'] or r['registers']['pc'] != stop:
-            raise SystemExit(f'call {target:#x} stopped at {r["registers"]["pc"]:#x}: {r["fault"]}')
+            raise SystemExit(f'run from {pc:#x} stopped at {r["registers"]["pc"]:#x}: {r["fault"]}')
         captured = {c['name']: bytes.fromhex(c['hex']) for c in r['memory']}
         self.ram = captured.pop('ram')
         self.captured = captured

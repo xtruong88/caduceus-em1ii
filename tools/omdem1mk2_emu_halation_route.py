@@ -47,10 +47,14 @@ def load_build():
 def spec_files(spec=None, no_pass=0, setting=False):
     """(patched spec path, symbols): SPEC, or v0.4c17 + the halation edits with the stage fixed at 2 (or, with
     `setting`, read from sid 961)."""
-    hl, syms, _ = load_build().make_edits(0 if setting else STAGE, no_pass)
+    build = load_build()
+    hl, syms, _ = build.make_edits(0 if setting else STAGE, no_pass)
     if spec:
         have = json.load(open(spec))['edits']
         missing = [e['addr'] for e in hl['edits'] if e not in have]
+        if missing:   # a look memory spec: halation is linked against that sd_loader build's p_get
+            hl, syms, _ = build.make_edits(0 if setting else STAGE, no_pass, True)
+            missing = [e['addr'] for e in hl['edits'] if e not in have]
         assert not missing, f'{spec} lacks these halation edits (setting={setting}, no_pass={no_pass}): {missing}'
         return spec, syms
     base = json.load(open(BASE_SPEC))
@@ -129,6 +133,41 @@ def check_route(stock, patched, syms):
     return marked[1]
 
 
+PLAIN_BUILDER, ART_BUILDER = 0x603A3C70, 0x60391C1C
+
+
+def route_target(img, syms, marker):
+    """Run hl_route from a `call ...,[],4` like the hooked site 0x603900ec, with job+35 = marker -> the builder it
+    jumps to. d1, a0, a1, MDR and sp must reach the builder as the call left them."""
+    job = bytearray(0x100)
+    job[35] = marker
+    code = b'\xdd' + struct.pack('<i', syms['hl_route'] - M.CALLER) + bytes([0x00, 4]) + b'\xcb'
+    regs = dict(pc=M.CALLER, sp=M.STACK + 0xF00, a0=M.JOB, d1=0x11223344, a1=0x55667788)
+    r = execute([Region('caller', M.CALLER, code, 'rx'), *V.main_regions(img),
+                 Region('stack', M.STACK, bytes(0x1000), 'rw'), Region('job', M.JOB, bytes(job), 'rw', True)],
+                regs, 0xFFFFFFF0, limit=20000, breakpoints=[PLAIN_BUILDER, ART_BUILDER])
+    g = r['registers']
+    assert r['status'] == 'breakpoint' and not r['fault'], (r['status'], r['fault'])
+    assert (g['a0'], g['d1'], g['a1'], g['mdr'], g['sp']) == (M.JOB, 0x11223344, 0x55667788, M.CALLER + 7,
+                                                              M.STACK + 0xF00 - 4), {k: hex(v) for k, v in g.items()}
+    return g['pc']
+
+
+def check_live(patched, syms, off=None):
+    """Only a marker of the current Halo stage acts: a stray 0xAx byte left at params+31 by a constructor that never
+    writes it (0x6035d6e4) or copies another record's byte there (0x60d19672) keeps the stock builder."""
+    other = (MARK & 0xFC) | (1 if STAGE != 1 else 3)
+    assert route_target(patched, syms, MARK) == ART_BUILDER
+    for marker in (other, MARK & 0xFC, 0xA0 | 0x0C | (MARK & 3) ^ 3, 0x5A, 0):
+        assert route_target(patched, syms, marker) == PLAIN_BUILDER, hex(marker)
+    line = f'hl_route at stage {STAGE}: {MARK:#x} -> Art builder; {other:#x} (other stage), stage 0, other bytes -> stock'
+    if off is not None:
+        for marker in range(0xA0, 0xB0):
+            assert route_target(off, syms, marker) == PLAIN_BUILDER, hex(marker)
+        line += '; Halo Off: every 0xA0..0xAF -> stock builder'
+    print(line + ' (d1, a0, a1, MDR and sp as the call left them)')
+
+
 def check_ob_no_pass(stock, patched, syms, mark):
     image, reference = P.patched(patched), P.patched(stock)
     dev_job = P.run(reference, P.make_job(mark['job'], 1), A.ART_DEV, 1, mark)[0]
@@ -171,9 +210,23 @@ def check_ob(stock, patched, syms, mark):
           'with identical submits, waits and job; unmarked job = stock blur')
 
 
+def check_ob_off(stock, off, syms, mark):
+    """Halo Off with a job that still carries a full marker (as a stray byte would): hl_ob must not enter hl_pass
+    (its entry is made a fault here) and must equal the stock blur."""
+    trap = bytearray(off)
+    o = syms['hl_pass'] - V.B
+    trap[o:o + 4] = b'\xff\xff\xff\xff'
+    reference = P.patched(stock)
+    dev_job = P.run(reference, P.make_job(mark['job'], 1), A.ART_DEV, 1, mark)[0]
+    assert dev_job[35] == MARK
+    assert P.run(P.patched(bytes(trap)), dev_job, syms['hl_ob'], 2, mark) == P.run(reference, dev_job, A.REDUCE, 2, mark)
+    print(f'B hl_ob, Halo Off: a job carrying {MARK:#x} skips hl_pass and equals the stock blur')
+
+
 def check_combiners(stock, patched, syms):
     cases = ((MARK, 0x80, 'marked', True), (0, 0x80, 'unmarked (stock Soft Focus)', False),
              (MARK, 0, 'marker without flag 0x80', False), (MARK & 0xFC, 0x80, 'marker with stage 0', False),
+             ((MARK & 0xFC) | (1 if STAGE != 1 else 3), 0x80, 'marker of another stage', False),
              (0x5A, 0x80, 'other byte', False))
     for marker, flag, label, neutral in cases:
         for effect, want in ((0x402, C.NEUTRAL_WEIGHTS if neutral else C.STOCK_WEIGHTS),
@@ -213,13 +266,20 @@ def main():
     a = p.parse_args()
     path, syms = spec_files(a.spec, int(a.no_pass), a.stage_setting)
     stock, patched = W.image(BASE_SPEC), W.image(path)
+    combined = V.image(path)
+    off = None
     if a.stage_setting:
         check_off(stock, patched, syms)
+        off = fix_stage(patched, syms, 0)
         patched = fix_stage(patched, syms)
-        print(f'stage read from sid 961; hl_flag getter call at {syms["hl_stage_get"]:#x} fixed to stage {STAGE}')
+        combined = fix_stage(combined, syms)
+        print(f'stage read from sid 961; hl_stage getter call at {syms["hl_stage_get"]:#x} fixed to stage {STAGE}')
+    check_live(patched, syms, off)
     mark = check_route(stock, patched, syms)
     (check_ob_no_pass if a.no_pass else check_ob)(stock, patched, syms, mark)
-    check_combiners(V.image(BASE_SPEC), V.image(path), syms)     # combiners do not read the stage setting
+    if off is not None and not a.no_pass:
+        check_ob_off(stock, off, syms, mark)
+    check_combiners(V.image(BASE_SPEC), combined, syms)          # every hook asks hl_live for the current stage
     print('RESULT PASS')
 
 

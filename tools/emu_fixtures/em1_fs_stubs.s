@@ -1,6 +1,7 @@
 /* Emulator-only stand-ins for the E-M1 II file / heap calls used by sd_loader (never part of a build).
  * Same frames as the loader's calls. Control block CTL (--defsym): +0 first fopen call that succeeds (1-based; 0 = never),
- * +4 fopen calls so far, +8 file size, +12 file data address, +16 bump-heap pointer, +20 seek position. */
+ * +4 fopen calls so far, +8 file size, +12 file data address, +16 bump-heap pointer, +20 seek position,
+ * +24 the stored look memory value returned by the property getter stand-in (sid 965). */
  .am33_2
  .text
  .global _start
@@ -63,3 +64,14 @@ s_malloc:                    /* call ..,[],4 : d0 n -> a0 */
  ret [],4
 s_free:                      /* call ..,[],4 */
  ret [],4
+s_getter:                    /* call ..,[d2,d3],12 : d0 key, d1 index -> d0; property 0xF719[1] (sid 965) = CTL+24, else 0 */
+ cmp 0xf719,d0
+ bne 5f
+ cmp 1,d1
+ bne 5f
+ mov CTL,a1
+ mov (24,a1),d0
+ ret [d2,d3],12
+5:
+ clr d0
+ ret [d2,d3],12

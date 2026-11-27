@@ -5,7 +5,9 @@ Hooks the HLS event loop at 0x602f7bf7 (every received event; half-press gate) t
 SD card (Slot 1: C:\EM1MOD\LOOKS.BIN, Slot 2: D:\EM1MOD\LOOKS.BIN) into
 heap memory on the first post-boot shutter press.
 """
+import importlib.util
 import json
+import os
 import struct
 import subprocess
 import tempfile
@@ -32,6 +34,19 @@ S2_FF_START, S2_LOAD_END = 0x6058018c, 0x60580800
 # v0.4c15: HLS event loop (0x602f7b11), every received event; was 0x6023d0db (never reached on a half-press, camera C0.0)
 HOOK_ADDR = 0x602f7bf7
 HOOK_STOCK_HEX = '5834fcec00000002'  # mov (52,sp),d0; btst 0x02000000,d0 = 8 bytes
+# Look memory (EM1_LOOKMEM=1): section .lmem in the 100 KB gap the halation patch makes Section 6 load, after the
+# Color Creator Halo page section (.hlui at 0x612f0000, color_creator_wheel/build.py) and before the gap end.
+LMEM_ADDR, GAP_END = 0x612f0800, 0x61300000
+EXPORTS = ('p_get', 'p_ensure', 'cc_sel', 'cc_hl', 'look_fill')
+LMEM_EXPORTS = ('lm_gate', 'look_restore', 'lm_refresh')
+
+
+def wheel_constants():
+    """BUILTIN_ADDR of the built-in look table (color_creator_wheel/build.py), read by look_restore."""
+    spec = importlib.util.spec_from_file_location('cc_build', Path(__file__).parent.parent / 'color_creator_wheel' / 'build.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.BUILTIN_ADDR
 
 SYMBOLS = {
     'em1_malloc': 0x600231fe,
@@ -48,6 +63,7 @@ SYMBOLS = {
     'em1_sel_color': 0x603ec8a2,    # COLOR selector: add 1816,a3 ... call builder 0x603ec642
     'em1_sel_other': 0x603ec8d3,    # COLOR selector: stock non-11 path
     'em1_hl_resume': 0x603ec8be,    # after the builder: beq 0x603ec912 (flags from the replayed btst)
+    'em1_get_facade': 0x608362c5,   # settings facade (look memory's live-view refresh; color_creator_wheel uses it too)
 }
 
 # Colour-stage hooks (E-P7 0x603b02c1 / 0x603b02de equivalents), with their stock bytes.
@@ -96,9 +112,13 @@ def build():
         elf = tmp / 'loader.elf'
         bin_out = tmp / 'loader.bin'
 
-        subprocess.run([AS, '-I', str(Path(__file__).parent.parent), '-I', str(Path(__file__).parent), '-o', str(obj), str(src)], check=True)
+        lookmem = os.environ.get('EM1_LOOKMEM') == '1'
+        subprocess.run([AS, '-I', str(Path(__file__).parent.parent), '-I', str(Path(__file__).parent)]
+                       + (['--defsym', 'LOOKMEM=1'] if lookmem else []) + ['-o', str(obj), str(src)], check=True)
 
         ld_cmd = [LD, '-Ttext', f'{CAVE_ADDR:#x}', '-e', '_start']
+        if lookmem:
+            ld_cmd += [f'--section-start=.lmem={LMEM_ADDR:#x}', f'--defsym=builtin_looks={wheel_constants():#x}']
         for k, v in SYMBOLS.items():
             ld_cmd.append(f'--defsym={k}={v:#x}')
         ld_cmd.extend(['-o', str(elf), str(obj)])
@@ -106,17 +126,22 @@ def build():
 
         subprocess.run([OBJCOPY, '-O', 'binary', '-j', '.text', str(elf), str(bin_out)], check=True)
         cave_payload = bin_out.read_bytes()
+        lmem_payload = b''
+        if lookmem:
+            subprocess.run([OBJCOPY, '-O', 'binary', '-j', '.lmem', str(elf), str(tmp / 'lmem.bin')], check=True)
+            lmem_payload = (tmp / 'lmem.bin').read_bytes()
 
         # Export the shared-state entry points for color_creator_wheel (Section 6 may call
         # Section 2 code: load order 1, 7, 2, 3, 4, 5, 6).
+        names = EXPORTS + (LMEM_EXPORTS if lookmem else ())
         nm_out = subprocess.check_output([NM, str(elf)]).decode()
         exports = {}
         for line in nm_out.splitlines():
             parts = line.split()
-            if len(parts) >= 3 and parts[2] in ('p_get', 'p_ensure', 'cc_sel', 'cc_hl', 'look_fill'):
+            if len(parts) >= 3 and parts[2] in names:
                 exports[parts[2]] = int(parts[0], 16)
-        assert set(exports) == {'p_get', 'p_ensure', 'cc_sel', 'cc_hl', 'look_fill'}, exports
-        (Path(__file__).parent / 'exports.json').write_text(
+        assert set(exports) == set(names), exports
+        (Path(__file__).parent / ('exports_lookmem.json' if lookmem else 'exports.json')).write_text(
             json.dumps({k: f'{v:#x}' for k, v in exports.items()}, indent=2) + '\n')
 
         # 2. Assemble hook at HOOK_ADDR (jmp sd_loader_entry)
@@ -191,9 +216,19 @@ nop
         edits['edits'].append({'kind': '0x100', 'addr': f'{site:#x}', 'expect': stock_hex, 'new': new.hex(),
                                'why': f'COLOR selector hook -> {sym} (E-P7 colour engine for Color Creator looks)'})
 
-    out_file = Path(__file__).parent / 'edits.json'
+    if lookmem:
+        loff = LMEM_ADDR - BASE
+        assert lmem_payload and LMEM_ADDR + len(lmem_payload) <= GAP_END - 16
+        assert all(b == 0xFF for b in main[loff - 16:loff + len(lmem_payload) + 16]), 'look memory area not 0xFF'
+        edits['edits'].append({
+            'kind': '0x100', 'addr': f'{LMEM_ADDR:#x}', 'expect': 'ff' * len(lmem_payload), 'new': lmem_payload.hex(),
+            'why': f'Look memory restore (sid 965) in the 100 KB gap ({len(lmem_payload)} bytes; needs the halation '
+                   'patch, which makes Section 6 load it)'})
+
+    out_file = Path(__file__).parent / ('edits_lookmem.json' if lookmem else 'edits.json')
     out_file.write_text(json.dumps(edits, indent=2) + '\n')
-    print(f'Generated {out_file} ({len(cave_payload)} bytes cave routine, 8 bytes hook)')
+    print(f'Generated {out_file} ({len(cave_payload)} bytes cave routine, 8 bytes hook'
+          + (f', {len(lmem_payload)} bytes look memory at {LMEM_ADDR:#x})' if lookmem else ')'))
 
 
 if __name__ == '__main__':

@@ -176,16 +176,20 @@ def build():
         assert len(builtin) == 1024
         probe = os.environ.get('EM1_SPACE_PROBE') == '1'      # code-space probe sp1 (patches/omdem1mk2/space_probe)
         halo = os.environ.get('EM1_CC_HALO') == '1'           # Halo page (halation step 4f)
+        lookmem = os.environ.get('EM1_LOOKMEM') == '1'        # look memory (sid 965); needs the Halo build's gap
+        assert halo or not lookmem, 'EM1_LOOKMEM=1 needs EM1_CC_HALO=1'
         subprocess.run([AS, '-I', str(Path(__file__).parent.parent), '-I', str(Path(__file__).parent)]
                        + (['--defsym', 'SPACE_PROBE=1'] if probe else [])
-                       + (['--defsym', 'HALO=1'] if halo else []) + ['-o', str(obj), str(src)], check=True)
+                       + (['--defsym', 'HALO=1'] if halo else [])
+                       + (['--defsym', 'LOOKMEM=1'] if lookmem else []) + ['-o', str(obj), str(src)], check=True)
 
         ld_cmd = [LD, '-Ttext', f'{CAVE_ADDR:#x}', '-e', '_start']
         if halo:
             ld_cmd.append(f'--section-start=.hlui={HALO_UI_ADDR:#x}')
-        # Shared-state routines live in sd_loader (Section 2); build it first.
-        exports = json.loads((Path(__file__).parent.parent / 'sd_loader' / 'exports.json').read_text())
-        for k in ('p_get', 'p_ensure', 'look_fill'):
+        # Shared-state routines live in sd_loader (Section 2); build it first (with EM1_LOOKMEM=1 for look memory).
+        exports = json.loads((Path(__file__).parent.parent / 'sd_loader' /
+                              ('exports_lookmem.json' if lookmem else 'exports.json')).read_text())
+        for k in ('p_get', 'p_ensure', 'look_fill') + (('look_restore',) if lookmem else ()):
             ld_cmd.append(f'--defsym={k}={exports[k]}')
         ld_cmd.append(f'--defsym=builtin_looks={BUILTIN_ADDR:#x}')
         for k, v in SYMBOLS.items():
@@ -285,14 +289,16 @@ def build():
     if halo:
         hoff = HALO_UI_ADDR - BASE
         assert HALO_UI_ADDR + len(halo_payload) <= GAP_END - 16
+        if lookmem:   # sd_loader's look memory section follows this one in the gap
+            assert HALO_UI_ADDR + len(halo_payload) <= int(exports['lm_gate'], 16) - 16, 'Halo page reaches .lmem'
         assert all(b == 0xFF for b in main[hoff - 16:hoff + len(halo_payload) + 16]), 'Halo UI area not 0xFF'
         edits_list.append({
             'kind': '0x100',
             'addr': f'{HALO_UI_ADDR:#x}',
             'expect': 'ff' * len(halo_payload),
             'new': halo_payload.hex(),
-            'why': f'Color Creator Halo page (sid 961) in the 100 KB gap ({len(halo_payload)} bytes; needs the '
-                   'halation patch, which makes Section 6 load it)',
+            'why': f'Color Creator Halo page (sid 961){" and look memory save (sid 965)" if lookmem else ""} in the '
+                   f'100 KB gap ({len(halo_payload)} bytes; needs the halation patch, which makes Section 6 load it)',
         })
 
     edits = {
@@ -300,7 +306,8 @@ def build():
         'edits': edits_list
     }
 
-    out_file = Path(__file__).parent / ('edits_halo.json' if halo else 'edits.json')
+    out_file = Path(__file__).parent / ('edits_halo_lookmem.json' if lookmem else
+                                        'edits_halo.json' if halo else 'edits.json')
     out_file.write_text(json.dumps(edits, indent=2) + '\n')
     print(
         f'Generated {out_file} ({len(cave_payload)} bytes cave at {CAVE_ADDR:#x}..{cave_end:#x}, '

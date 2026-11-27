@@ -1,5 +1,8 @@
 # E-M1 II halation step 4: tinted halation pass
 
+Blocks: [261123-2331-em1ii-look-quality](../261123-2331-em1ii-look-quality/plan.md). Its camera builds wait for the
+v0.4c24 camera baseline, and it must not reuse sid 961.
+
 In progress (2026-11-23). Verify each phase in the emulator, then make one camera build.
 Design source: E-P7 `patches/halation` (h1–h4) on the grain CPU route, docs/HALATION_RED.md §14–22, docs/GRAIN_PORT.md;
 E-M1 II sites and harnesses: docs/OMD-EM1-II/HALATION.md (steps 2–3).

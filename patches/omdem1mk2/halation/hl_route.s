@@ -14,8 +14,11 @@
  *             return slot and a0 exactly as on entry.
  *   hl_c11 /  combiner 11 / 12 table words (0x6053e164 / 0x6053e16c): for a marked job (request - 11329 = job+35) the
  *   hl_c12    blend is neutral (w = 1024: 11 -> A 1024 / B 0, 12 -> A 0 / B 1024), so the blend output is record 0x1000
- *             with the halation; any other job runs the stock handler. "Marked" needs the marker with a stage 1..3 and
- *             flag 0x80 at job+16 (request - 11348), which only hl_route sets on a marked job.
+ *             with the halation; any other job runs the stock handler. "Marked" needs flag 0x80 at job+16
+ *             (request - 11348), which only hl_route sets on a marked job, and a live marker.
+ * Live marker (hl_flag.s hl_live): 0xA0 | (tint - 1) << 2 | stage with stage 1..3 equal to the current Halo stage.
+ * All four hooks ask it, so with Halo Off every job keeps the stock paths even if its constructor left a stray 0xAx
+ * at params+31 (0x6035d6e4 never writes that byte; 0x60d19672 copies another record's byte there).
  */
  .am33_2
  .text
@@ -25,8 +28,21 @@ hl_route:
  and 0xf0,d0
  cmp 0xa0,d0
  beq 1f
+2:
  jmp PLAIN_BUILDER
 1:
+ add -8,sp                        /* (0) call slot, (4) MDR: the builders get it as the hooked call left it */
+ mov mdr,d0
+ mov d0,(4,sp)
+ movbu (35,a0),d0
+ call hl_live,[d2,d3],24          /* keeps a0, d1, a1 */
+ mov d0,(0,sp)
+ mov (4,sp),d0
+ mov d0,mdr
+ mov (0,sp),d0
+ add 8,sp
+ cmp 0,d0
+ beq 2b                           /* a stray 0xAx byte, or Halo Off: stock colour builder */
  mov (16,a0),d0                   /* flag word: add Soft Focus for this job only */
  or 0x80,d0
  mov d0,(16,a0)
@@ -41,9 +57,9 @@ hl_ob:
  mov a0,(4,sp)
  movbu (35,a0),d2                 /* marker */
  mov d2,d0
- and 0xf0,d0
- cmp 0xa0,d0
- bne 9f
+ call hl_live,[d2,d3],24          /* a marker whose stage is the current Halo stage (else the stock blur only) */
+ cmp 0,d0
+ beq 9f
  mov 4096,d0                      /* record 0x1000 */
  call BUFIDX,[d2],4
  exthu d0
@@ -104,25 +120,20 @@ hl_c12:
  mov TAIL,a0
  jmp (a0)
 
-/* hl_marked: `call hl_marked,[],4`, a2 = ctx -> d0 = 1 when the job behind ctx+4 is marked, else 0. Uses d0, a0 */
+/* hl_marked: `call hl_marked,[],4`, a2 = ctx -> d0 = 1 when the job behind ctx+4 is marked, else 0. Uses d0, a0
+ * (hl_live keeps d1 and a1, which the stock handlers may still read). */
 hl_marked:
  mov (4,a2),a0
  cmp 0,a0
  beq 1f
- movbu (-11329,a0),d0             /* request = job+11364, so job+35 */
- btst 3,d0                        /* stage 1..3 */
- beq 1f
- and 0xf0,d0
- cmp 0xa0,d0
- bne 1f
- movbu (-11348,a0),d0             /* job+16, low byte of the flag word */
+ movbu (-11348,a0),d0             /* request = job+11364: job+16, low byte of the flag word */
  btst 0x80,d0
- bne 2f
+ beq 1f
+ movbu (-11329,a0),d0             /* job+35: a marker of the current Halo stage (keeps d1, a0, a1) */
+ call hl_live,[d2,d3],24
+ ret [],4
 1:
  clr d0
- ret [],4
-2:
- mov 1,d0
  ret [],4
 
 /* hl_bank: `call hl_bank,[],4`: the stock handlers' stores before their weights; a2 := bank = (8,ctx) + 7364 */

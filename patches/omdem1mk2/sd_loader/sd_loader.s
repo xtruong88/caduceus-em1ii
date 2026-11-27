@@ -70,7 +70,11 @@ sd_hook:
     and 0x1ff,d1
     cmp 0x1ff,d1
     bne sd_hook_out
+.ifdef LOOKMEM
+    call lm_gate,[d2,d3,a2,a3],36   /* sd_gate, then restore the remembered look (section .lmem) */
+.else
     call sd_gate,[d2,d3,a2,a3],36
+.endif
     mov (52,sp),d0
 sd_hook_out:
     btst 0x02000000,d0
@@ -626,4 +630,124 @@ lf_clamp:
 
 lf_mult:
     .byte 2,3,4,6
+
+.ifdef LOOKMEM
+/* =========================================================================
+ * Look memory (build with EM1_LOOKMEM=1; section .lmem in the 100 KB gap that the halation patch makes Section 6
+ * load, build.py LMEM_ADDR). The editor stores the chosen look in sid 965 (color_creator_wheel lm_apply_save):
+ *   v = 1 + look + 32 * (source is the card), so 1..48 for 16 built-in and 32 card looks; 0 = none.
+ * Sid 965 (key 0xF719 index 1, s8; E-P7 "COLOR1 shadow", which this body never offers) has no reader, is in no boot
+ * reset list and holds 1..64 through all three boot reset paths (plans/reports/research-261123-2342-em1ii-look-slot.md).
+ * Restore rebuilds P in RAM; tone (384/692/383) and vividness (618) are stock settings the camera already keeps across
+ * power-off. Live view only re-runs the colour stage when a setting is stored (camera, v0.3b3: P changes alone did not
+ * show), so a restored colour look ends with lm_refresh: one SetValue(618) of its own current value, exactly what the
+ * editor's lv_refresh does. Its post-set notifier 0x608647c0 only allocates and posts a message. A rejected write
+ * (camera busy) just leaves live view to the next refresh; the JPEG request is built per capture either way.
+ * ========================================================================= */
+.equ LMEM_KEY,  0xF719              /* sid 965 = property 0xF719 index 1 */
+.equ LMEM_IDX,  1
+.equ CC_RAW,    9                   /* raw 0x9481 for Color Creator (facade sid 111 = 21) */
+.equ N_BUILTIN, 16
+.equ SID_CC_VIVID, 618
+
+    .section .lmem,"ax"
+.global lm_gate
+.global look_restore
+.global lm_refresh
+
+/* lm_gate: from sd_hook on a half-press once every section is loaded; same frame as sd_gate. */
+lm_gate:
+    call sd_gate,[d2,d3,a2,a3],36
+    call p_get,[d2,d3],12
+    cmp 0,a0
+    beq 1f
+    mov a0,a2
+    call look_restore,[d2,d3,a2,a3],20
+1:
+    ret [d2,d3,a2,a3],36
+
+/* look_restore (a2 = P), `call look_restore,[d2,d3,a2,a3],20`. Once per power-on (P_LMEM). A card look waits
+ * until LOOKS.BIN is loaded (P_SD_STATE 0 = not tried yet / retrying) and is dropped when the card failed or the
+ * index is past the pack. Mono looks only restore the index (P_ACTIVE stays 0: vividness -4 is already stored). */
+look_restore:
+    movbu (P_LMEM,a2),d0
+    cmp 0,d0
+    bne 9f
+    mov LMEM_KEY,d0
+    mov LMEM_IDX,d1
+    mov 0,a0
+    call em1_getter,[d2,d3],12
+    add -1,d0                       /* v - 1; v = 0 or v > 64 (any width) -> done, nothing restored */
+    cmp 64,d0
+    bcc 8f
+    mov d0,d3
+    and 31,d3                       /* look index */
+    btst 32,d0
+    beq 2f
+    movhu (P_SD_STATE,a2),d1
+    cmp 0,d1
+    beq 9f                          /* card not loaded yet: try again on the next half-press */
+    cmp 1,d1
+    bne 8f
+    movhu (P_NLOOKS,a2),d1
+    cmp d1,d3
+    bcc 8f
+    mov (P_BUF,a2),a3
+    mov d3,d0
+    asl 6,d0
+    add 64,d0
+    add d0,a3                       /* card record: buf + 64 + 64 i */
+    mov LOOK_SOURCE_CARD,d1
+    bra 3f
+2:
+    cmp N_BUILTIN,d3
+    bcc 8f
+    mov d3,d0
+    asl 6,d0
+    mov builtin_looks,a3
+    add d0,a3
+    mov 1,d1
+3:
+    clr d0
+    movbu d0,(P_ACTIVE,a2)          /* the colour stage ignores P while it is rebuilt */
+    movhu d1,(P_INIT,a2)
+    movhu d3,(P_LOOK,a2)
+    movbu (45,a3),d0
+    cmp 1,d0
+    beq 8f                          /* mono */
+    call look_fill,[d2,d3,a2,a3],20
+    mov CC_RAW,d0
+    mov d0,(P_CCMODE,a2)
+    mov 1,d0
+    movbu d0,(P_ACTIVE,a2)
+    movbu d0,(P_LMEM,a2)
+    call lm_refresh,[d2,d3,a2,a3],24
+    ret [d2,d3,a2,a3],20
+8:
+    mov 1,d0
+    movbu d0,(P_LMEM,a2)
+9:
+    ret [d2,d3,a2,a3],20
+
+/* lm_refresh: SetValue(618, GetValue(618)) through the settings facade (color_creator_wheel lv_refresh).
+ * `call lm_refresh,[d2,d3,a2,a3],24`; frame (0,sp) call slot, (4,sp) GetValue out. Result ignored. */
+lm_refresh:
+    clr d0
+    mov d0,(4,sp)
+    call em1_get_facade,[],4
+    mov (a0),a2
+    mov (8,a2),a2                   /* vtable +8: GetValue(sid, &out) */
+    mov SID_CC_VIVID,d0
+    mov sp,a1
+    inc4 a1
+    calls (a2)
+    call em1_get_facade,[],4
+    mov (a0),a2
+    mov (a2),a2                     /* vtable +0: SetValue(sid, 0, value) */
+    mov SID_CC_VIVID,d0
+    clr d1
+    mov (4,sp),a1
+    calls (a2)
+    ret [d2,d3,a2,a3],24
+.endif
 

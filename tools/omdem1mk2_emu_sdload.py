@@ -26,7 +26,8 @@ import omdem1mk2_emu_validator as V  # noqa: E402
 from penf_emulator import Region, execute  # noqa: E402
 
 FUNCS = {'s_fopen': 0x6062ce6a, 's_fclose': 0x6062ce73, 's_fread': 0x6062cff9, 's_fseek': 0x6062d0f1,
-         's_ftell': 0x6062d087, 's_malloc': 0x600231fe, 's_free': 0x6002323d}
+         's_ftell': 0x6062d087, 's_malloc': 0x600231fe, 's_free': 0x6002323d,
+         's_getter': 0x6005e6cf}   # property getter: only look memory builds read it here (sid 965 = ctl+24)
 STUB, CTL, FILE, HEAP, STK = 0x9e000000, 0x9e100000, 0x9e200000, 0x9e400000, 0x9f000000
 HOOK, BACK = 0x602f7bf7, 0x602f7bff
 HALF = 0x02000100
@@ -69,9 +70,12 @@ def looks_file(bad=False):
     return bytes(f)
 
 
-def run_presses(img, code, ready_from, filedata, presses, events=None, secbits=0x1ff, *, state=None):
+def run_presses(img, code, ready_from, filedata, presses, events=None, secbits=0x1ff, *, state=None, lookmem=0,
+                extra=(), captured=None):
+    """`lookmem` = the value the getter stand-in returns for sid 965; `extra` = more emulator regions (fixtures).
+    `captured` (a dict) receives the final bytes of the `extra` regions that capture memory."""
     ctl = bytearray(0x40)
-    struct.pack_into('<IIIIII', ctl, 0, ready_from, 0, len(filedata), FILE, HEAP, 0)
+    struct.pack_into('<7I', ctl, 0, ready_from, 0, len(filedata), FILE, HEAP, 0, lookmem & 0xFFFFFFFF)
     if state is None:
         pblk = bytearray(0x200)
         struct.pack_into('<IH', pblk, 0, 0x50314d45, HANDLE)
@@ -89,7 +93,7 @@ def run_presses(img, code, ready_from, filedata, presses, events=None, secbits=0
                Region('p', 0xa1b00000 + (HANDLE << 7), bytes(pblk), 'rw', True),
                Region('pram', P_RAM, bytes(pram), 'rw', True), Region('stk', STK, bytes(0x2000), 'rw'),
                Region('fh', 0x9e7f0000, bytes(16), 'rw'),
-               Region('sec', SECBITS & ~0xff, bytes(0xfc) + struct.pack('<I', secbits), 'r')]
+               Region('sec', SECBITS & ~0xff, bytes(0xfc) + struct.pack('<I', secbits), 'r'), *extra]
         stk = bytearray(0x2000)
         sp = STK + 0x1000
         struct.pack_into('<I', stk, 0x1000 + 52, ev)          # the loop frame's event word
@@ -101,6 +105,12 @@ def run_presses(img, code, ready_from, filedata, presses, events=None, secbits=0
             break
         mem = {x['name']: bytes.fromhex(x['hex']) for x in r['memory']}
         ctl, pblk, pram, heap = bytearray(mem['ctl']), bytearray(mem['p']), bytearray(mem['pram']), mem['heap']
+        if captured is not None:
+            for x in extra:
+                if x.name in mem:
+                    captured[x.name] = mem[x.name]
+            extra = tuple(Region(x.name, x.address, captured[x.name], x.permissions, True) if x.name in captured else x
+                          for x in extra)
         g = r['registers']
         z = (g['psw'] >> 0) & 1                                 # PSW.Z = bit 0
         want_z = int((ev & 0x02000000) == 0)

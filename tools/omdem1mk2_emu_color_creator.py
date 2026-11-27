@@ -35,12 +35,17 @@ class Editor:
             main[off:off + 5] = b'\xdc' + struct.pack('<i', self.ui_syms[name] - address)
         self.regions = V.main_regions(bytes(main))
         self.state = struct.pack('<IH', 0x50314D45, SD.HANDLE).ljust(0x200, b'\0')
+        # sid n at MODEL + 16 + 4 n; 0x1000 covers sid 965 (look memory builds)
         self.model = struct.pack('<4I', MODEL + 4, self.ui_syms['ui_set'], 0,
-                                 self.ui_syms['ui_get']).ljust(0xC00, b'\0')
+                                 self.ui_syms['ui_get']).ljust(0x1000, b'\0')
         self.heap = bytes(0x4000)
 
-    def half_press(self, pack):
-        result, self.state, self.heap = SD.run_presses(self.image, self.fs_code, 1, pack, 1, state=self.state)
+    def half_press(self, pack, ready_from=1):
+        # The UI fixture code and the settings model (read-only: a half-press must not store a setting) are mapped
+        # because look memory builds read the property getter, patched to a UI fixture, on a half-press.
+        extra = (Region('ui', UI, self.ui_code, 'rx'), Region('model', MODEL, self.model, 'r'))
+        result, self.state, self.heap = SD.run_presses(self.image, self.fs_code, ready_from, pack, 1,
+                                                       state=self.state, extra=extra)
         assert len(result) == 1 and isinstance(result[0][0], int), result
         return result[0][0]
 

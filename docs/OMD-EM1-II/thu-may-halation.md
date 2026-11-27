@@ -15,6 +15,10 @@ Filter Soft Focus, và ô đó chuyển thẳng sang hàm gốc. Phần mới ch
 
 Vì vậy, chỉ cần nạp một lần là dùng được:
 
+0. **Nên làm nếu chỉ có một máy:** trước tiên nạp `restore/E1259999.BIN`, tức firmware 3.7 chính hãng của OM, không có bản
+   vá. Rủi ro gần như bằng một lần cập nhật chính hãng. Bước này chứng minh trên chính máy bạn rằng thẻ, quy trình nạp và
+   đường quay về đều hoạt động, và rằng tệp 3.7 hiện tại (`691a8a8e…`) chạy tốt. Khởi động và chụp thử một ảnh rồi
+   mới làm bước 1.
 1. Nạp `out/em1mk2-thu-may/4-v0.4c24`.
 2. Kiểm như bước 1: khởi động, chụp và xem ảnh 4:3, 65:24 / 21:9, AF, Color Creator `C1.n`.
 3. **Kiểm đường xử lý mới:** cảnh ban ngày **không có điểm cháy sáng**, tripod, Vivid. Chụp một ảnh với Halo Off và một
@@ -108,8 +112,10 @@ Dựng bằng `caduceus.py build`, rồi kiểm bằng `caduceus.py verify` (ph�
 | `out/em1mk2-thu-may/2-v0.4c22t` | chẩn đoán | `DCOLYMP/`, `EM1MOD/` |
 | `out/em1mk2-thu-may/3-v0.4c23t` | quầng Med | `DCOLYMP/`, `EM1MOD/` |
 | `out/em1mk2-thu-may/4-v0.4c24` | ứng viên | `DCOLYMP/`, `EM1MOD/` |
+| `out/em1mk2-thu-may/5-v0.4c25t` | v0.4c24 + nhớ look, chỉ sau khi v0.4c24 đạt ([thu-may-nho-look.md](thu-may-nho-look.md)) | `DCOLYMP/`, `EM1MOD/` |
+| `out/em1mk2-thu-may/6-v0.4c26t` | v0.4c25t + WB theo look, chỉ sau khi v0.4c25t đạt ([thu-may-look-wb.md](thu-may-look-wb.md)) | `DCOLYMP/`, `EM1MOD/` |
 
-Trong mỗi thư mục đều có `restore/E1259999.BIN`. Tệp này giống nhau ở cả bốn thư mục và là firmware gốc. Không chép
+Trong mỗi thư mục đều có `restore/E1259999.BIN`. Tệp này giống nhau ở mọi thư mục và là firmware gốc. Không chép
 `restore/` lên thẻ, trừ khi muốn quay về firmware gốc.
 
 Lệnh kiểm tra lại một thư mục trước khi chép:

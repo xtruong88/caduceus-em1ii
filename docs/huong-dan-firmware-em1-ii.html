@@ -229,6 +229,16 @@ python caduceus.py verify out/em1mk2-v0.4c24</pre>
 
 <section id="nap">
   <h2>7. Nạp firmware vào máy</h2>
+  <div class="ok"><strong>Bước 0, nên làm nếu bạn chỉ có một máy:</strong> nạp <code>restore/E1259999.BIN</code> trước. Tệp này
+    là firmware 3.7 chính hãng của OM, không có bản vá nào, nên rủi ro gần như bằng một lần cập nhật chính hãng. Chép nó
+    lên thẻ thành <code>DCOLYMP/E1259999.BIN</code> và làm đúng các bước dưới đây. Nếu thành công, bạn biết chắc ba điều
+    trên chính máy mình:
+    <ul>
+      <li>thẻ và quy trình nạp hoạt động;</li>
+      <li>tệp 3.7 hiện tại của OM (<code>691a8a8e…</code>) chạy tốt;</li>
+      <li>đường quay về đã sẵn sàng.</li>
+    </ul>
+    Khởi động và chụp thử một ảnh, rồi mới nạp tệp cài Caduceus (v0.4c24) theo cùng các bước.</div>
   <ol>
     <li>Để máy ở <strong>OFF</strong>. Lắp pin đầy, cho thẻ vào <strong>khe 1</strong>, đóng mọi nắp.</li>
     <li>Giữ <kbd>OK</kbd> trong khi gạt công tắc sang <strong>ON</strong>.</li>

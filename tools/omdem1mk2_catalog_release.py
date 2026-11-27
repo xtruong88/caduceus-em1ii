@@ -31,10 +31,22 @@ HALO_DIAG_VERSION = 'v0.4c22t'
 HALO_GLOW_VERSION = 'v0.4c23t'
 HALO_RELEASE_VERSION = 'v0.4c24'
 HALO_STAGE = 2
-HALO_BUILDS = {HALO_DIAG_VERSION: (HALO_STAGE, 1), HALO_GLOW_VERSION: (HALO_STAGE, 0), HALO_RELEASE_VERSION: (0, 0)}
+# Look memory: v0.4c24 + the remembered look (sid 965), camera test only. Its code is in the same gap as the Halo page.
+LOOKMEM_VERSION = 'v0.4c25t'
+# Look WB: v0.4c25t + the active look's WB fine-tune (patches/omdem1mk2/look_wb, built with EM1_LOOKMEM=1), camera test.
+LOOK_WB_VERSION = 'v0.4c26t'
+LOOK_WB_EDITS = ROOT / 'patches/omdem1mk2/look_wb/edits.json'
+LOOKMEM_BUILDS = (LOOKMEM_VERSION, LOOK_WB_VERSION)
+HALO_BUILDS = {HALO_DIAG_VERSION: (HALO_STAGE, 1), HALO_GLOW_VERSION: (HALO_STAGE, 0), HALO_RELEASE_VERSION: (0, 0),
+               LOOKMEM_VERSION: (0, 0), LOOK_WB_VERSION: (0, 0)}
 WHEEL_EDITS = ROOT / 'patches/omdem1mk2/color_creator_wheel/edits.json'
 HALO_WHEEL_EDITS = ROOT / 'patches/omdem1mk2/color_creator_wheel/edits_halo.json'
 HALO_PAGE_ADDR = '0x612f0000'             # the Halo page section, in the gap the halation edits make Section 6 load
+LOOKMEM_WHEEL_EDITS = ROOT / 'patches/omdem1mk2/color_creator_wheel/edits_halo_lookmem.json'
+LOOKMEM_SD_EDITS = ROOT / 'patches/omdem1mk2/sd_loader/edits_lookmem.json'
+LOOKMEM_ADDR = '0x612f0800'               # sd_loader's look memory section (build.py LMEM_ADDR), same gap
+SD_EDITS = ROOT / 'patches/omdem1mk2/sd_loader/edits.json'
+SD_LOADER_CAVE = '0x60580200'
 CAMERA = 'em1mk2'
 CATALOG_SECTION_END = 0x60257000
 ASPECT_SECTION_END = 0x60257800
@@ -109,15 +121,45 @@ def halation_test_spec(spec):
             'edits': [*patch['edits'], *spec['edits']]}
 
 
+def sd_loader_is_lookmem(spec):
+    """Which sd_loader build the spec carries (its cave edit), so code linked against sd_loader (halation's p_get)
+    uses that build's addresses: the look memory build moves them. Refuses a cave that matches neither build."""
+    cave = next(e['new'] for e in spec['edits'] if e['kind'] == '0x100' and e['addr'] == SD_LOADER_CAVE)
+    builds = {}
+    for lookmem, path in ((False, SD_EDITS), (True, LOOKMEM_SD_EDITS)):
+        edits = json.loads(path.read_text(encoding='utf-8'))['edits']
+        builds[lookmem] = next(e['new'] for e in edits if e['addr'] == SD_LOADER_CAVE)
+    matches = [lookmem for lookmem, new in builds.items() if new == cave]
+    if len(matches) != 1:
+        raise ValueError('The sd_loader cave in this spec matches no current sd_loader build: rebuild it')
+    return matches[0]
+
+
 def halo_spec(spec, version):
     """The halation edits built here (HALO_BUILDS[version]) in front of a v0.4c17 spec with the Halo wheel."""
     loader = importlib.util.spec_from_file_location('hl_build', ROOT / 'patches/omdem1mk2/halation/build.py')
     build = importlib.util.module_from_spec(loader)
     loader.loader.exec_module(build)
     stage, no_pass = HALO_BUILDS[version]
-    patch, _, _ = build.make_edits(stage, no_pass)
+    lookmem = sd_loader_is_lookmem(spec)
+    patch, _, _ = build.make_edits(stage, no_pass, lookmem)
+    # hl_flag's `call P_GET` (dd d32) must land on this spec's p_get, never on the other sd_loader build's
+    code_edit = next(e for e in patch['edits'] if int(e['addr'], 16) == build.CODE_AT)
+    code = bytes.fromhex(code_edit['new'])
+    targets = {build.CODE_AT + i + struct.unpack_from('<i', code, i + 1)[0]
+               for i in range(len(code) - 5) if code[i] == 0xDD}
+    if build.p_get(lookmem) not in targets or build.p_get(not lookmem) in targets:
+        raise ValueError("halation's p_get call does not match this spec's sd_loader build")
     return {**spec, 'version': version, 'halation_force_stage': stage, 'halation_no_pass': no_pass,
             'edits': [*patch['edits'], *spec['edits']]}
+
+
+def look_wb_spec(spec):
+    """The look WB edits after a look memory spec; refuses edits linked against the other sd_loader build."""
+    patch = json.loads(LOOK_WB_EDITS.read_text(encoding='utf-8'))
+    if patch.get('lookmem') != sd_loader_is_lookmem(spec):
+        raise ValueError("look_wb's p_get does not match this spec's sd_loader build: rebuild with EM1_LOOKMEM=1")
+    return {**spec, 'edits': [*spec['edits'], *patch['edits']]}
 
 
 def sharp_test_spec(spec):
@@ -171,6 +213,10 @@ def validate(spec_path, version):
             run('emu_spare_setting', spec_path)
         if not no_pass:
             run('emu_halation_pass')
+    if version in LOOKMEM_BUILDS:
+        run('emu_look_memory', spec_path)
+    if version == LOOK_WB_VERSION:
+        run('emu_look_wb', spec_path)
     # Both releases preserve the camera-tested v0.4c15 aspect assets byte for byte.
     run('emu_scp', spec_path, '--reference', ROOT / 'releases' / CAMERA / BASE_RELEASE / 'edits.json')
     return sorted(set(checked))
@@ -188,7 +234,12 @@ def seal(stock_path, version):
     spec = catalog_spec(legacy, main)
     if version in (COLOR_CREATOR_VERSION, HALATION_TEST_VERSION, SHARP_TEST_VERSION):
         spec = replace_color_creator_edits(spec)
-    if version in HALO_BUILDS:
+    if version in LOOKMEM_BUILDS:
+        spec = replace_color_creator_edits(spec, LOOKMEM_WHEEL_EDITS, (HALO_PAGE_ADDR,))
+        spec = halo_spec(replace_color_creator_edits(spec, LOOKMEM_SD_EDITS, (LOOKMEM_ADDR,)), version)
+        if version == LOOK_WB_VERSION:
+            spec = look_wb_spec(spec)
+    elif version in HALO_BUILDS:
         spec = halo_spec(replace_color_creator_edits(spec, HALO_WHEEL_EDITS, (HALO_PAGE_ADDR,)), version)
     if version == HALATION_TEST_VERSION:
         spec = halation_test_spec(spec)

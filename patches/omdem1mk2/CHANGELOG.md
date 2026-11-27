@@ -5,6 +5,74 @@ Container update package: `E1259999.BIN` (93,050,944 bytes) installed via `DCOLY
 
 ---
 
+## v0.4c26t — 2026-11-27 (look WB camera-test build; emulator-checked, not camera-tested)
+
+- v0.4c25t plus one feature: **a colour look's WB shift is applied.** Its record's `a_b` / `g_m` (−7..7, flag +25)
+  replace the stored WB fine-tune at the 14 image-pipeline reads (12 in the capture block, 2 in the compact slot)
+  while Color Creator shows an active colour look. Menus keep the user's values; nothing is written.
+- Stays stock: other picture modes, no active look, mono looks, looks without a WB shift, **CWB** (a chosen colour
+  temperature is kept, as on the E-P7; this body would otherwise apply the fine-tune in CWB too), and in-camera RAW
+  development.
+- **Behaviour change:** five built-in looks (and the same looks in the card pack) carry a WB shift the camera ignored
+  until now, so their JPEGs change: Nostalgic A-B +3, Gold 200 +2, Kodachrome64 +1, Portra 400 +1, CineStill800 −3.
+- Code: `patches/omdem1mk2/look_wb` (222 B at 0x612f1000, in the 100 KB gap after look memory's restore), built with
+  `EM1_LOOKMEM=1` so its `p_get` call matches this sd_loader; the seal refuses the other build.
+- Emulator: every v0.4c25t check, plus `emu_look_wb`:
+  - each of the 14 sites across 27 states: stock in every register (except psw) whenever the look does not apply;
+    the look's value, sign-extended like the getter, with the other registers as stock, when it does;
+  - the capture WB segment run natively for category 1 × preset 0..14 and categories 0 / 2 / 3 / 4: no look = stock
+    byte for byte; a look = the stock block with that look stored as the fine-tune; CWB = stock.
+- Not emulated: WB bracketing and the gain calculator after the segment (they read only the capture block, which
+  matches the stock one exactly), the compact slot's consumer and live view. On the E-P7 live view did not show the
+  shift. Camera test: `docs/OMD-EM1-II/thu-may-look-wb.md`.
+- Look switch order (`color_creator_wheel`): the editor now clears `P_ACTIVE` before it writes a new `P_LOOK` / `P_INIT`
+  (arrow step and editor entry), so the colour stage and the WB stub never pair one look's state with another's look
+  index. Only the look memory wheel build ships here; v0.4c25t keeps the wheel it was sealed with.
+- Known limit: the stub reads the WB category at read time, so a category the capture remapped away from CWB leaves the
+  look's WB off (the safe direction).
+- Sealed with 23 checks; `E1259999.BIN` SHA-256 `26135ee0…`, `edits.json` `bc44f149…`. Rebuilt and verified with
+  `caduceus.py build` / `verify` (Windows Python) from the catalog stock file.
+
+## v0.4c25t — 2026-11-24 (look memory camera-test build; emulator-checked, not camera-tested)
+
+- v0.4c24 plus one feature: **the Color Creator look survives power-off.** A look chosen with the arrows in the editor
+  is stored in sid 965 (property 0xF719 index 1, a setting this body never uses) as `1 + look + 32 × card`. After
+  power-on, the first half-press, or opening the editor if that comes first, rebuilds the look in RAM. A card look waits
+  until LOOKS.BIN is read. Tone and vividness are stock settings the camera already keeps. A restored colour look ends
+  with one SetValue(618) of its own value, as the editor's `lv_refresh` does, so live view shows the look at once; the
+  camera showed in v0.3b3 that a change to P alone does not redraw it.
+- Not remembered: Strength (back to x1), Chroma (back to 0). A full reset clears the remembered look; the camera then
+  behaves as v0.4c24. When the editor switches itself to card look 0 because LOOKS.BIN was read after a built-in look
+  was chosen, that card look is what is remembered.
+- Known limit: the half-press restore (HLS task) and an arrow step (UI task) are not locked against each other. Only a
+  half-press landing inside one arrow step, while a card look is still waiting for the card, can replace that step's
+  choice.
+- Review fix before the camera test: the first v0.4c25t seal linked halation's `p_get` call from the default
+  sd_loader build, which is 2 bytes off in the look memory build. It ran only because the flags at that point made the
+  stray branch fall through. The halation build now links against the sd_loader build in the spec, and the seal
+  refuses a spec where that call misses `p_get`.
+- Review fix, halation (resealed v0.4c22t, v0.4c23t, v0.4c24 and this build): two of the 11 callers of the job
+  constructor leave a stray byte where the halation marker sits (`0x6035d6e4` never writes it; `0x60d19672` copies a
+  byte of another record there). With Halo Off, a stray 0xAx byte could have sent a job down the Art route. Every
+  hook that acts on the marker now also requires its stage to equal the current Halo stage, so **Halo Off is stock
+  for every job**, whatever that byte holds. Emulator: Halo Off with every 0xA0..0xAF goes to the stock builder,
+  `hl_ob` skips the pass, and the combiners stay stock. The opcode audit now also covers the code in the gap.
+- Section 2 and Section 6 are full, so the new code lives in the 100 KB gap the halation patch loads: `.hlui` at
+  0x612f0000 for the save, after the Halo page, and `.lmem` at 0x612f0800 for the restore. Build with
+  `EM1_LOOKMEM=1` for sd_loader, and with `EM1_CC_HALO=1 EM1_LOOKMEM=1` for color_creator_wheel. The default builds are
+  byte-identical to before.
+- Emulator: every v0.4c24 check, plus `emu_look_memory`, which covers:
+  - sid 965 through the real settings store (0..64, the three boot reset paths, neighbours untouched);
+  - the half-press restore of built-in, card and mono looks, a card that is late, missing or too short, and
+    invalid values;
+  - the editor save and restore;
+  - that a colour restore makes exactly one SetValue, 618 rewritten with its stored value, and changes no stored
+    setting, while mono, skipped and invalid cases make none;
+  - that stock and v0.4c24 ignore sid 965.
+- Not emulated: the flash write at power-off; the live-view redraw itself, and the 618 write from the half-press
+  (HLS) task, which stock code may never do. Its post-set notifier only posts a message. Camera test:
+  `docs/OMD-EM1-II/thu-may-nho-look.md`.
+
 ## v0.4c24 — 2026-11-23 (halation release candidate; emulator-checked, not camera-tested)
 
 - v0.4c23t with the strength taken from the Color Creator **Halo** page (Off / Low / Med / High, sid 961). It starts at

@@ -1,0 +1,111 @@
+{
+ "patch": "look_wb",
+ "lookmem": true,
+ "edits": [
+  {
+   "kind": "0x100",
+   "addr": "0x612f1000",
+   "expect": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "new": "8287fcc8f9840000c80afcc879960000c90fcd1600e010a500c8068ddfc00c888d9000dcacd6d6fe83dd9ff328ffc00cb000c905cca60092f8421ea000c905cc9b00f80220a000c905cc9100fccc81940000049000dd7ad6d6fec00cf80620a4c97afccc21810000049000dd64d6d6fec00ca003c866f86210f86614a502c817a501c958a010c654f8c006fcdc5081bc60f160ca19f86606a501c940f8661ca4c63af8c0062840f82208f160f84019f8e081a001c926f8401a280714a00fc61cf8441b290715a50fc612fccbf9840000c8038428f98501dfe01004dfe010",
+   "why": "look WB: wb_get (222 B, p_get 0x605803c8)"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a20a",
+   "expect": "c644d2ff",
+   "new": "f76dfb00",
+   "why": "look WB: A-B read at 0x6033a209 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a224",
+   "expect": "ac44d2ff",
+   "new": "dd6dfb00",
+   "why": "look WB: G-M read at 0x6033a223 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a367",
+   "expect": "6943d2ff",
+   "new": "9a6cfb00",
+   "why": "look WB: A-B read at 0x6033a366 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a37c",
+   "expect": "5443d2ff",
+   "new": "856cfb00",
+   "why": "look WB: G-M read at 0x6033a37b -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a3f9",
+   "expect": "d742d2ff",
+   "new": "086cfb00",
+   "why": "look WB: A-B read at 0x6033a3f8 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a40f",
+   "expect": "c142d2ff",
+   "new": "f26bfb00",
+   "why": "look WB: G-M read at 0x6033a40e -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a476",
+   "expect": "5a42d2ff",
+   "new": "8b6bfb00",
+   "why": "look WB: A-B read at 0x6033a475 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a48c",
+   "expect": "4442d2ff",
+   "new": "756bfb00",
+   "why": "look WB: G-M read at 0x6033a48b -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a506",
+   "expect": "ca41d2ff",
+   "new": "fb6afb00",
+   "why": "look WB: A-B read at 0x6033a505 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a51e",
+   "expect": "b241d2ff",
+   "new": "e36afb00",
+   "why": "look WB: G-M read at 0x6033a51d -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a572",
+   "expect": "5e41d2ff",
+   "new": "8f6afb00",
+   "why": "look WB: A-B read at 0x6033a571 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6033a58b",
+   "expect": "4541d2ff",
+   "new": "766afb00",
+   "why": "look WB: G-M read at 0x6033a58a -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x60343735",
+   "expect": "9bafd1ff",
+   "new": "ccd8fa00",
+   "why": "look WB: A-B read at 0x60343734 -> wb_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x60343748",
+   "expect": "88afd1ff",
+   "new": "b9d8fa00",
+   "why": "look WB: G-M read at 0x60343747 -> wb_get"
+  }
+ ]
+}

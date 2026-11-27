@@ -1,0 +1,10 @@
+{
+  "cc_hl": "0x605804da",
+  "cc_sel": "0x60580461",
+  "lm_gate": "0x612f0800",
+  "lm_refresh": "0x612f08ac",
+  "look_fill": "0x6058062e",
+  "look_restore": "0x612f081b",
+  "p_ensure": "0x605803f7",
+  "p_get": "0x605803c8"
+}

@@ -258,6 +258,73 @@ The E-P7 movie layer's record/message sites have no masked-signature match on th
 
 **What this means for the port.** TruePic VIII on the E-M1 II has the same COLOR-profile plumbing as the E-P7: profile numbers, per-profile saturation (`0xF6FA`, 3 profiles × 12) and an effective 12-sector saturation that reaches the request. What the E-M1 II lacks is the **user interface**: no COLOR/MONO picture modes in the menus, no profile editor screens. That is why looks live in Color Creator: it is the only stock screen with a colour wheel, and its hue/vividness reach the request as 617/618. Per-sector saturation can still come through **a read-site override at the 12 `0xF6EA` reads** (the E-P7 technique used for NR, see `docs/FIRMWARE_GUIDE.md`). It is not built yet, and it needs a check that the pipeline honours `+24208` outside picture mode 11.
 
+### 7.8 WB fine-tune reads (A–B `0x84F9`, G–M `0x9679`) [objdump + emulator 2026-11-27]
+
+Every call to the property getter `0x6005e6cf` whose last key load before the call is `fc cc <key> 00 00`
+(`mov key,d0`), found by a byte scan of the decoded main. Each call is `dd <rel32> c0 0c` (`call 0x6005e6cf,[d2,d3],12`,
+7 B), the same shape as the E-P7 sites in `docs/WB_PATCH.md`. A WB-per-look stub would change only the rel32 at
+site+1. The A–B and G–M keys appear nowhere else in code; the other two copies are sid-table entries
+(`0x604f8128` = sid 39, `0x604f829c` = sid 132).
+
+The capture block dispatches on the WB category at `capture+24158` (`0x6033a1d4`). Each branch writes A to
+`capture+24248` and G to `capture+24250` (E-P7: +24098 / +24100).
+
+| E-M1 II site (A / G) | d1 | Branch (`capture+24158`) | Also writes | E-P7 counterpart (by order) |
+|---|---|---|---|---|
+| `0x6033a209` / `0x6033a223` | 0 | 1, preset (table on `+24154`, 0..13) | – | `0x60302c46` / `0x60302c60` preset |
+| `0x6033a366` / `0x6033a37b` | 15 | 1, preset table entry → `0x6033a35c` | `+1854` = 4, `+3000` = 23 | `0x60302da3` / `0x60302db8` Flash |
+| `0x6033a3f8` / `0x6033a40e` | 0 | 2, one-touch (`0x6033a3da`) | `+3000` = 256..259 from `+24280` (key `0x8E41`, sid 84) | `0x60302e35` / `0x60302e4b` one-touch |
+| `0x6033a475` / `0x6033a48b` | 0 | **3, CWB** (`0x6033a455`) | `+3000` = 512..515 from `+24282` (key `0x8A61`, sid 1522); `+3002` = Kelvin from `+24156` | none: the E-P7 forces 0/0 in CWB (`0x60302e92`) |
+| `0x6033a505` / `0x6033a51d` | 0 | 4 (`0x6033a4d6`) | `+3000` = 67 | `0x60302f23` / `0x60302f3b` cat 4 |
+| `0x6033a571` / `0x6033a58a` | 1 | other (`0x6033a53a`) | `+3000` = 1 or 0 from `+24953` | `0x60302f8f` / `0x60302fa8` Auto |
+| `0x60343734` / `0x60343747` | 0 | compact slot: `movbu` to `(a2+40)+78 / +80` | – | `0x6030bb5b` / `0x6030bb6e` compact ring slot |
+| `0x60cc3803` / `0x60cc3817` | per mode | in-camera RAW development (leave stock) | – | `0x60c68a45` / `0x60c68a59` |
+
+- **Every site is `mov key,d0; mov 0,a0; clr d1 | mov n,d1; call`**, or sets a0 = 0 right after the previous call with no
+  a0 write in between (`0x6033a50e`, `0x6033a57a`). At `0x6033a223 / 40e / 48b` d1 is cleared after the previous call
+  (`0x6033a212 / 401 / 47e`). So the E-P7 stub contract (d0 key, d1 idx, a0 = 0) holds at all 14 non-RAW sites.
+- **Category = key 33057 (`0x8121`, sid 9), and 3 is CWB, as on the E-P7** [static + emulator 2026-11-27]:
+  - The request builder stores the raw getter value at `capture+24158` (`0x602d32f0..0x602d32fe`). It forces 2 when
+    `0x602da198()` has bit 1 set, and when key 33073 == 1 it maps key 27665 = 2 → category 0, = 1 → category 1 with
+    preset 13 (`0x602d3300..0x602d3354`).
+  - `capture+24156` = getter(`0x8F22`, idx = getter(`0x8A61`)) (`0x602d3677..0x602d3697`). Branch 3 copies it to
+    `capture+3002`, where the preset branches put their colour temperature (3000..7500 K, Flash 5500).
+  - The stock validator (`tools/omdem1mk2_emu_validator.py --sid 107`) gives sid 107 = `0x8F22` idx 1 exactly 56 values,
+    2000..14000: the CWB Kelvin list. Sids 1524..1527 are `0x8F22` idx 2..5.
+- **The extra pair is CWB.** The E-P7 forces A/G to 0/0 in CWB; the E-M1 II reads the fine-tune in CWB too. A
+  WB-per-look stub can keep the E-P7 rule (category 3 → stock) by testing raw key 33057 == 3.
+- Category 0 (and anything above 4) takes the "other" branch `0x6033a53a` (jump at `0x6033a1f1`), which reads index 1
+  like the E-P7's Auto. That 0 is Auto is inferred, not checked.
+
+- Offsets are near-constant: capture block +0x375c3, compact slot +0x37bd9, RAW +0x5adbe.
+- **Not found:** the E-P7's second params builder (`0x6030eb61` / `0x6030eb77`, `0x6030e9d1` → params+5520/5521). No
+  getter call near `0x6034673a` loads these keys, and no sid-getter call reads sid 39 / 132 outside the UI code at
+  `0x60998741..0x6099882c` (the fine-tune menu, presumably). Whether this body fills those params another way, or not
+  at all, needs the disassembler.
+- WB category key 33057 (`0x8121`) is read at `0x602d32f0` (request builder), `0x60340ffc`, `0x60359a8d`,
+  `0x6036ff19`, `0x6037048b`, `0x60370809`, `0x604673e2`, `0x6079e352`, `0x60cc1f57`, `0x6141eb0e`.
+- **Stub `wb_get`** (`patches/omdem1mk2/look_wb`, 222 B at `0x612f1000`, after look memory's `.lmem`; not in a release
+  yet): the 14 non-RAW rel32s point to it. It returns the active look's record `a_b` / `g_m` (+26 / +27, flag +25 bit0
+  set, bit7 clear, both in −7..7) when P is valid, `P_ACTIVE`, live `0x9481` == `P_CCMODE` (the `cc_sel` gate) and the
+  category is not 3. The record is `builtin_looks + 64·P_LOOK` (`P_INIT` 1) or `P_BUF + 64 + 64·P_LOOK` (`P_INIT` 2,
+  LOOKS.BIN loaded, index < `P_NLOOKS`). Otherwise it tail-jumps to the getter on the site's frame. Needs the halation
+  edits (gap loaded) and links `p_get` from the sd_loader build in the spec (`EM1_LOOKMEM=1` for v0.4c25t).
+- Emulator (`tools/omdem1mk2_emu_look_wb.py`, base v0.4c25t, 2026-11-27): PASS.
+  - Sites: 27 states × 14 sites, 112 override runs; a stub with the CWB test broken fails. Getter facts used: the WB
+    arrays are s8 (type `0x17`), returned sign-extended; a1 and MDR after the getter do not depend on the key.
+  - Capture segment `0x6033a1d2 → 0x6033a5ab` run natively on a 25.6 KB block, category 1 × preset 0..14 (preset 13
+    = Flash, 14 = default branch) and categories 0 / 2 / 3 / 4: with no look, the patched block equals stock byte for
+    byte; with a look (+5 / −4), it equals the stock block with +5 / −4 stored as the fine-tune (derived `+1854` /
+    `+1896` included); in CWB it equals stock. This runs every capture site's continuation, so a0 after the override
+    is proven harmless there; the compact slot pair reloads `mov 0,a0` after each call (`0x60343744`, `0x60343754`).
+- Stack: +28 B over stock at these sites (`wb_val`'s 16 B + the nested getter call's 12 B).
+- Known limits: the stub reads the raw category (key 33057) at read time, while the capture branch uses its snapshot
+  at `capture+24158` (which can be remapped to 0 / 1 / 2); raw 3 with a remapped branch leaves the look's WB off
+  (safe direction). The UI writes `P_LOOK` / `P_INIT` before clearing `P_ACTIVE` (`color_creator_wheel.s`
+  `step_film_profile`, editor entry), so a capture inside that window can take one shot's WB from the next look.
+  Mono looks get no WB (`P_ACTIVE` 0).
+- Not emulated: after the segment (WB bracketing, the gain calculator), the compact slot's consumer, live view.
+
 
 ---
 

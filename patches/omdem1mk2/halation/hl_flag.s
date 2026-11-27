@@ -18,6 +18,7 @@
 .am33_2
 .text
 .global _start
+.global hl_live
 _start:
 
 hl_entry:
@@ -38,19 +39,9 @@ hl_entry:
     and 0xfffe,d0
     cmp 0x1000,d0
     bne hl_done
-.if FORCE_STAGE
-    mov FORCE_STAGE,d0
-.else
-    mov STAGE_KEY,d0          /* property getter(key, index 0, a0 = 0), as stock 0x604226d2 calls it */
-    clr d1
-    mov 0,a0
-hl_stage_get:                 /* label only: route harnesses replace this 7-byte call with a fixed stage */
-    call GETTER,[d2,d3],12
-.endif
+    call hl_stage,[d2,d3],12  /* d0 = Halo stage 0..3 (0 = Off) */
     cmp 0,d0
     beq hl_done
-    cmp 3,d0
-    bhi hl_done               /* SetValue does not range-check: anything above 3 (or negative) is Off */
     mov d0,d1                 /* job marker: params+31 -> job+35 = 0xA0 | (tint - 1) << 2 | stage, red first */
     or 0xa0,d1
     movbu d1,(19,a2)          /* a2 = params+12 */
@@ -96,3 +87,49 @@ hl_done:
     mov (28,a3),a3            /* replay `mov (28,a0),a3` (a3 = request) */
     mov 24951,a1              /* replay `mov 24951,a1` */
     jmp BACK                  /* 0x60422865: `add a3,a1` */
+
+/* hl_stage: `call hl_stage,[d2,d3],12` -> d0 = the Halo stage 1..3, or 0 for Off. Uses d1, a0, a1 (the getter's).
+ * The only read of the stage: hl_flag (marking) and hl_live (every hook that acts on a marker) both use it. */
+hl_stage:
+.if FORCE_STAGE
+    mov FORCE_STAGE,d0
+.else
+    mov STAGE_KEY,d0          /* property getter(key, index 0, a0 = 0), as stock 0x604226d2 calls it */
+    clr d1
+    mov 0,a0
+hl_stage_get:                 /* label only: route harnesses replace this 7-byte call with a fixed stage */
+    call GETTER,[d2,d3],12
+    cmp 3,d0
+    bls 1f
+    clr d0                    /* SetValue does not range-check: anything above 3 (or negative) is Off */
+1:
+.endif
+    ret [d2,d3],12
+
+/* hl_live: `call hl_live,[d2,d3],24` with d0 = a job's marker byte (job+35) -> d0 = 1 when it is a halation marker
+ * (0xA0 | (tint - 1) << 2 | stage, stage 1..3) whose stage equals the current Halo stage, else 0. Keeps d1, a0, a1.
+ * Every hook that acts on a marker asks this, so with Halo Off no job leaves the stock paths, whatever byte its
+ * constructor left at params+31: constructor 0x6035d6e4 never writes it (stack garbage) and 0x60d19672 copies a
+ * byte of another record there; neither passes hl_flag. Frame: (0) call slot, (4) d1, (8) a0, (12) a1. */
+hl_live:
+    mov d0,d2
+    and 0xf0,d0
+    cmp 0xa0,d0
+    bne 8f
+    mov d2,d3
+    and 3,d3
+    beq 8f
+    mov d1,(4,sp)
+    mov a0,(8,sp)
+    mov a1,(12,sp)
+    call hl_stage,[d2,d3],12
+    mov (4,sp),d1
+    mov (8,sp),a0
+    mov (12,sp),a1
+    cmp d3,d0
+    bne 8f
+    mov 1,d0
+    ret [d2,d3],24
+8:
+    clr d0
+    ret [d2,d3],24

@@ -41,9 +41,15 @@ SYMS = dict(GETTER=GETTER, STAGE_KEY=STAGE_KEY, BACK=BACK, PLAIN_BUILDER=0x603A3
             BUFIDX=0x6038C01C, BLUR=BLUR, C11=C11, C12=C12, TAIL=0x603DD518, BANK_INIT=0x603DCA05,
             LOCK=0x6006E9D0, UNLOCK=0x6006EA19, FLUSH=0x60068709, MAPPER=0x6006888F, MODEGET=0x60068B78,
             MODESET=0x60068B88, MALLOC=0x600231FE, FREE=0x6002323D,
-            # look tint (step 4e): sd_loader's p_get and color_creator_wheel's built-in look table
-            P_GET=int(json.loads((HERE.parent / 'sd_loader/exports.json').read_text())['p_get'], 16),
+            # look tint (step 4e): color_creator_wheel's built-in look table; sd_loader's p_get is per build (p_get())
             BUILTIN=0x60BC8150)
+
+
+def p_get(lookmem=False):
+    """sd_loader's p_get for the sd_loader build this halation build ships with: the look memory build
+    (EM1_LOOKMEM=1, exports_lookmem.json) moves it, because its hook calls lm_gate with a longer call."""
+    name = 'exports_lookmem.json' if lookmem else 'exports.json'
+    return int(json.loads((HERE.parent / 'sd_loader' / name).read_text())['p_get'], 16)
 
 
 def env_int(name, lo, hi):
@@ -57,8 +63,9 @@ def force_stage():
     return env_int('EM1_HL_FORCE_STAGE', 0, 3)
 
 
-def assemble(force, no_pass=0):
+def assemble(force, no_pass=0, lookmem=False):
     """hl_flag + hl_route + hl_pass linked as one block at CODE_AT (hl_flag first: its hl_entry is the hook target)."""
+    syms_in = dict(SYMS, P_GET=p_get(lookmem))
     with tempfile.TemporaryDirectory() as t:
         t = Path(t)
         objs = []
@@ -67,15 +74,16 @@ def assemble(force, no_pass=0):
                             str(HERE / f'{name}.s'), '-o', str(t / f'{name}.o')], check=True)
             objs.append(str(t / f'{name}.o'))
         subprocess.run([str(TC / 'mn10300-elf-ld'), f'--section-start=.text={CODE_AT:#x}', '-e', '_start', *objs,
-                        '-o', str(t / 'e')] + [f'--defsym={k}={v:#x}' for k, v in SYMS.items()], check=True)
+                        '-o', str(t / 'e')] + [f'--defsym={k}={v:#x}' for k, v in syms_in.items()], check=True)
         subprocess.run([str(TC / 'mn10300-elf-objcopy'), '-O', 'binary', str(t / 'e'), str(t / 'b')], check=True)
         nm = subprocess.run([str(TC / 'mn10300-elf-nm'), str(t / 'e')], capture_output=True, text=True).stdout
         syms = {p[2]: int(p[0], 16) for p in (line.split() for line in nm.splitlines()) if len(p) == 3}
         return (t / 'b').read_bytes(), syms
 
 
-def make_edits(force, no_pass):
-    """-> (spec dict, symbols, code size) for the given stage override and pass switch; writes nothing."""
+def make_edits(force, no_pass, lookmem=False):
+    """-> (spec dict, symbols, code size) for the given stage override and pass switch; writes nothing.
+    `lookmem`: link against the look memory sd_loader build (its p_get address)."""
     d = BIN.read_bytes()
     assert d[END_IMM - 2 - B:END_IMM + 4 - B] == b'\xfc\xcc' + struct.pack('<I', OLD_END), 'end-word stub changed'
     assert d[HOOK - B:HOOK + 7 - B] == HOOK_STOCK, 'converter entry changed'
@@ -84,7 +92,7 @@ def make_edits(force, no_pass):
         assert d[addr - B:addr - B + len(stock)] == stock, f'stock bytes changed at {addr:#x}'
     for addr in WDT_SITES:
         assert d[addr - B:addr - B + 2] == WDT_STOCK, f'watchdog site changed at {addr:#x}'
-    code, syms = assemble(force, no_pass)
+    code, syms = assemble(force, no_pass, lookmem)
     assert d[CODE_AT - B:CODE_AT + len(code) - B] == b'\xff' * len(code), 'code area not 0xFF'
     assert CODE_AT + len(code) <= HALO_PAGE_AT, 'code runs into the Color Creator Halo page'
     jump = b'\xdc' + struct.pack('<i', syms['hl_entry'] - HOOK) + b'\xcb\xcb'
