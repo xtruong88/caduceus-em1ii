@@ -23,6 +23,8 @@ Third-party:
   patches/aspect_fix (issue #23) uses that fork's site list and approach (branch ep7-aperture-ar, GPL-3.0);
   the stubs and data there are written for our ids 6/7, see docs/ASPECT.md section 1i.
 - Community film recipes are credited to their authors in docs/LIBRARY_V1.md.
+- The double-click installation flow and Quick Start layout were inspired by Meghnus's om10mi-mods
+  (https://github.com/Meghnus/om10mi-mods).
 
 "Olympus", "PEN", "OM SYSTEM" and film names are trademarks of their respective owners. Not affiliated
 with OM Digital Solutions, Fujifilm or Kodak.

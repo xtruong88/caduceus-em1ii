@@ -1,3 +1,6 @@
 # Release metadata is hashed byte-for-byte, including line endings.
 releases/**/edits.json text eol=lf
 releases/**/build.json text eol=lf
+*.bat text eol=crlf
+*.command text eol=lf
+build-caduceus-linux.sh text eol=lf

@@ -51,6 +51,10 @@
 .equ P_LMEM,        83              /* u8 look memory (EM1_LOOKMEM builds): 1 = the remembered look was restored, found
                                      * invalid, or replaced by a look chosen in the editor this power-on */
 .equ P_STR,         80              /* u8 look strength 0..3 = x1, x1.5, x2, x3 (S up to +-10, H/L up to +-15) */
+/* colour wheel (patches/omdem1mk2/color_wheel). P is zeroed at create (p_ensure), so the wheel feed starts off. */
+.equ P_WON,         84              /* u8 1 = the wheel producer shows the look (cw_get overrides 906 / sectors / cursor) */
+.equ P_WAXIS,       85              /* u8 wheel axis 0 = S, 1 = H, 2 = L (H/L drawn as round(v / 3), clamp -5..5) */
+.equ P_WCUR,        86              /* u8 wheel cursor 1..12 = sector, 255 = none */
 /* debug_log (v0.4b1). Patch state never goes in the loaded image (FIRMWARE_GUIDE §10 lesson 2). */
 .equ P_LGON,        96              /* u8 0 = DEBUG.TXT not looked for yet, 1 = found, 2 = absent (stop looking) */
 .equ P_LGSLOT,      97              /* u8 card with DEBUG.TXT: 0 = C: (slot 1), 1 = D: (slot 2) */

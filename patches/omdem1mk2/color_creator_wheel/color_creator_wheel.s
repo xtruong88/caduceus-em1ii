@@ -15,14 +15,24 @@
  *       cc_guide (stock 0x60e543d6) — writes kind-5 inline UTF-16LE text to (40, view) / (48, view)
  *       displaying the active look name (Page 0) or live page values (Chroma, Luminance, Midtones).
  *
- * Pages (P_PAGE in the shared state block P, see ../p_layout.inc), INFO / TRASH cycle 0..2:
- *   - Page 0 (Film): arrows step the look; the look drives the E-P7 COLOR engine (sd_loader cc_sel/cc_hl:
+ * Pages (P_PAGE in the shared state block P, see ../p_layout.inc), INFO and TRASH both step forward through
+ * 0 .. N_PAGES-1 and wrap to Film (EM1_CC_WHEEL=1: TRASH on the Wheel page steps the axis instead). Page numbers are
+ * the PG_* constants below (they move with EM1_CC_WHEEL=1):
+ *   - PG_FILM: arrows step the look; the look drives the E-P7 COLOR engine (sd_loader cc_sel/cc_hl:
  *       12-sector S, per-sector H/L) plus tone 384/692/383 (HL/MID/SH, read by the image request); colour looks reset Color Creator
  *       vividness (618) to 0, mono looks set -4. Dials: stock wheel (vividness 618 / hue 617).
  *       Banner: name, " Exx" (failed 617/618 write), " C<card state>", " K<key>" and "+" once applied.
- *   - Page 1 (Chroma): offset on all 12 sectors of the look's S (-5..+5).
- *   - Page 2 (Luminance): Front Dial & Left/Right = Highlights (384), Rear Dial & Up/Down = Shadows (383).
- *   Page 3 (Strength): x1 / x1.5 / x2 / x3 on the look's S, hue and light. Midtone comes from the look only.
+ *   - PG_WHEEL (EM1_CC_WHEEL=1 only, right after Film): one Wheel page, the look's S, H or L axis (P_WAXIS) drawn as
+ *       the dormant 12-sector COLOR-wheel polygon (C3d kind 5; values from ../color_wheel cw_get). The Down arrow and
+ *       TRASH step the axis S -> H -> L -> S and redraw (TRASH as Delete on the E-P7 / PEN-F wheel); Up, Left, Right
+ *       and both dials do nothing (the dials reach cc_up/cc_down through the stock dial loop, told apart by P_DIAL).
+ *       Entering the page switches the C3d surface
+ *       stop type 0 -> start type 4 -> draw; leaving it (page step, OK, other events) switches back stop type 4 ->
+ *       start type 0 -> draw (section .cwui, cw_*).
+ *   - PG_CHROMA: offset on all 12 sectors of the look's S (-5..+5).
+ *   - PG_LUM: Front Dial & Left/Right = Highlights (384), Rear Dial & Up/Down = Shadows (383).
+ *   - PG_STR: x1 / x1.5 / x2 / x3 on the look's S, hue and light. Midtone comes from the look only.
+ *   - PG_HALO (EM1_CC_HALO=1): halation stage (section .hlui).
  *
  * Cave location: 0x612e6900, Section 6 FF tail 0x612e68c4..0x612e7000 (Section 6 ends at 0x612e7000;
  *   nothing past it is loaded). Built-in looks are in the Section 5 tail (build.py BUILTIN_ADDR).
@@ -49,7 +59,27 @@
 .ifndef HALO
 .equ HALO, 0
 .endif
+.ifndef CC_WHEEL
+.equ CC_WHEEL, 0
+.endif
+.equ PG_FILM,      0
+.if CC_WHEEL
+.if HALO == 0
+.error "EM1_CC_WHEEL needs EM1_CC_HALO=1 (its code is in the gap the halation patch loads)"
+.endif
+.equ PG_WHEEL,     1        /* Wheel: axis P_WAXIS 0..2 = S / H / L, stepped by Down */
+.equ PG_CHROMA,    2
+.equ PG_LUM,       3
+.equ PG_STR,       4
+.equ PG_HALO,      5
+.equ N_PAGES,      5 + HALO /* Film, Wheel, Chroma, Luminance, Strength (+ Halo) */
+.else
+.equ PG_CHROMA,    1
+.equ PG_LUM,       2
+.equ PG_STR,       3
+.equ PG_HALO,      4
 .equ N_PAGES,      4 + HALO /* Film, Chroma, Luminance, Strength (+ Halo: build with EM1_CC_HALO=1) */
+.endif
 .equ SID_HALO,     961      /* halation stage, docs/OMD-EM1-II/HALATION.md: 0 Off, 1 Low, 2 Med, 3 High */
 .equ VIVID_MIN,    -4       /* lowest valid 618 value; there is no monochrome in Color Creator */
 
@@ -110,10 +140,13 @@ cc_init:
     call em1_getter,[d2,d3],12
     mov d0,(P_CCMODE,a2)
 
-    /* Always start on Page 0 (Film) with dial_active = 0 */
+    /* Always start on Film with dial_active = 0 */
     clr d0
-    movhu d0,(P_PAGE,a2)
+    movhu d0,(P_PAGE,a2)            /* PG_FILM */
     movbu d0,(P_DIAL,a2)
+.if CC_WHEEL
+    movbu d0,(P_WON,a2)             /* safety: the wheel feed is off on entry (no fwOpe call here: the GUI starts type 0) */
+.endif
 
     /* Apply look 0 on first entry and when switching to a pack loaded since the last entry.
      * Keep the active editor source stable during an HLS half-press: the guide, arrows and
@@ -201,9 +234,13 @@ cc_dial2:
  * CALLS entry: a0 = parent, d0 = event, d1 = arg
  * ========================================================================= */
 cc_page:
+.if CC_WHEEL
+    jmp cw_page                     /* TRASH: axis on the Wheel page, else cc_info; others: cw_event (section .cwui) */
+.else
     cmp 0x9016,d0
     beq cc_info
     jmp em1_cc_page
+.endif
 
 cc_info:
     movm [d2,d3,a2,a3],(sp)
@@ -223,7 +260,10 @@ cc_info:
     ret [d2,d3,a2,a3],28
 2:
     mov a0,a2
-    /* Cycle page: 0 -> 1 -> 2 -> 3 -> 0 */
+.if CC_WHEEL
+    call cw_next_page,[d2,d3,a2,a3],20  /* step the page and switch the C3d surface (section .cwui) */
+.else
+    /* Cycle page: 0 -> 1 -> ... -> N_PAGES-1 -> 0 */
     movhu (P_PAGE,a2),d0
     inc d0
     cmp N_PAGES,d0
@@ -231,6 +271,7 @@ cc_info:
     clr d0
 3:
     movhu d0,(P_PAGE,a2)
+.endif
     bra cc_poke_child
 
 
@@ -264,9 +305,15 @@ cc_up_down_common:
     beq cc_ud_stock
     mov a0,a2
     movhu (P_PAGE,a2),d2
-    cmp 0,d2
+.if CC_WHEEL
+    cmp PG_WHEEL,d2
+    bne 1f
+    jmp cw_down                     /* Wheel: Down arrow steps the axis, the rest does nothing (section .cwui) */
+1:
+.endif
+    cmp PG_FILM,d2
     beq cc_ud_p0
-    cmp 2,d2
+    cmp PG_LUM,d2
     beq cc_ud_lum
     bra cc_ud_stock
 
@@ -319,19 +366,25 @@ cc_left_right_common:
     beq cc_lr_stock
     mov a0,a2
     movhu (P_PAGE,a2),d2
-    cmp 0,d2
+.if CC_WHEEL
+    cmp PG_WHEEL,d2
+    bne 2f
+    jmp cc_ret1                     /* Wheel: Left / Right and the front dial do nothing */
+2:
+.endif
+    cmp PG_FILM,d2
     beq cc_lr_p0
-    cmp 1,d2
+    cmp PG_CHROMA,d2
     beq cc_lr_chr
-    cmp 2,d2
+    cmp PG_LUM,d2
     beq cc_lr_lum
 .if HALO
-    cmp 4,d2
+    cmp PG_HALO,d2
     bne 1f
-    jmp hl_ui_step           /* page 4: Halo (section .hlui) */
+    jmp hl_ui_step           /* PG_HALO: Halo (section .hlui) */
 1:
 .endif
-    /* Page 3 (Strength) */
+    /* PG_STR (Strength) */
     mov d3,d2
     call step_strength,[d2,d3,a2,a3],20
     bra cc_poke_child
@@ -376,6 +429,7 @@ cc_lr_stock:
  * ========================================================================= */
 cc_poke_child:
     call sync_children_and_view,[d2,d3,a2,a3],20
+cc_ret1:
     mov 1,d0
     ret [d2,d3,a2,a3],28
 
@@ -447,19 +501,27 @@ cc_guide:
 
     mov (12,sp),a0
     movhu (P_PAGE,a0),d1
-    cmp 0,d1
+    cmp PG_FILM,d1
     beq guide_page_film
-    cmp 1,d1
+    cmp PG_CHROMA,d1
     beq guide_page_chroma
-    cmp 2,d1
+    cmp PG_LUM,d1
     beq guide_page_lum
 
-    cmp 3,d1
+    cmp PG_STR,d1
     beq guide_page_str
 .if HALO
-    cmp 4,d1
+    cmp PG_HALO,d1
+.if CC_WHEEL
+    bne 1f
+.else
     bne guide_page_str
-    jmp hl_ui_guide          /* page 4: "Halo Med" (section .hlui) */
+.endif
+    jmp hl_ui_guide          /* PG_HALO: "Halo Med" (section .hlui) */
+.endif
+.if CC_WHEEL
+1:
+    jmp cw_guide             /* PG_WHEEL: "Wheel S <look>" (section .cwui) */
 .endif
 
 guide_page_str:
@@ -958,7 +1020,7 @@ scp_cc_label:
     mov a0,(24,sp)
 
     movhu (P_PAGE,a0),d0
-    cmp 0,d0
+    cmp PG_FILM,d0
     bne scp_page_mode
 
     /* Page 0: active look name */
@@ -973,11 +1035,15 @@ scp_cc_label:
     bra scp_set_text
 
 scp_page_mode:
+.if CC_WHEEL
+    jmp cw_scp_label         /* a1 = label for the page, back at scp_set_text (section .cwui) */
+.else
     and 3,d0
     asl 2,d0
     mov scp_page_ptrs,a1
     add d0,a1
     mov (a1),a1
+.endif
 
 scp_set_text:
     mov (20,sp),a0
@@ -989,7 +1055,11 @@ scp_skip:
 
 /* =========================================================================
  * 10. DATA TABLES: Page Labels, Built-in Preset Names, and Preset Values
+ * With EM1_CC_WHEEL=1 they move to section .cwui (the gap): the Section 6 cave has no room for the wheel hooks.
  * ========================================================================= */
+.if CC_WHEEL
+    .section .cwui,"ax"
+.endif
 .balign 4
 scp_page_ptrs:
     .long u16_page0
@@ -1129,4 +1199,262 @@ lm_apply_save:
     mov SID_LOOKMEM,d0
     call set_setting_facade,[d2,d3,a2,a3],20
     ret [d2,d3,a2,a3],20
+.endif
+
+.if CC_WHEEL
+/* =========================================================================
+ * Wheel page (EM1_CC_WHEEL=1; section .cwui in the 100 KB gap, build.py CW_UI_ADDR; needs the halation load-end
+ * edit and ../color_wheel's cw_get, which feeds the look's axis to the stock producer while P_WON = 1).
+ *
+ * C3d surface switching (plans/reports/research-261127-1557-em1ii-color-wheel-osd.md, Phase 01): the fwOpe API
+ * object comes from em1_fw_iface (0x6082602c, as the stock GUI 0x60f09d40 / 0x60f09e18 gets it); vtable slots
+ * +32 stopVariousDraw(type), +28 startVariousDraw(type), +48 drawC3dAsync(5), each called `calls (slot)` with
+ * a0 = object, d0 = type, d1 = 2 if the GUI's flag 0x61fbfbcc is set else 1 (the value the GUI pairs with it),
+ * a1 = a zeroed 32-byte block. Opening a surface while another is open hangs the C3d API task, so every start is
+ * preceded by the stop of the open one:
+ *   enter (Film -> Wheel):      P_WAXIS = 0 (S), P_WCUR = 255, P_WON = 1; stop 0 -> start 4 -> draw
+ *   axis (Down or TRASH on Wheel): P_WAXIS S -> H -> L -> S; draw
+ *   leave (Wheel -> Chroma, OK, any other parent event): P_WON = 0; stop 4 -> start 0 -> draw
+ * cw_leave does nothing while P_WON = 0, so it is safe on every path. cc_init clears P_WON without calling fwOpe
+ * (the GUI itself starts type 0 for the editor's screen).
+ * ========================================================================= */
+.equ FW_SLOT_START, 28
+.equ FW_SLOT_STOP,  32
+.equ FW_SLOT_DRAW,  48
+.equ FW_TYPE_CC,    0                /* kind 1: Color Creator ring */
+.equ FW_TYPE_WHEEL, 4                /* kind 5: COLOR wheel polygon */
+.equ FW_DRAW,       5                /* drawC3dAsync accepts type 5 only */
+.equ GUI_DISP2,     0x61fbfbcc       /* GUI: 1 while its last start used d1 = 2 */
+.global cw_ok
+    .section .cwui,"ax"
+
+/* cw_fw (d0 = type, d1 = slot offset): one fwOpe API call. Entered `call cw_fw,[d2,d3,a2,a3],56`:
+ * (0,sp) call slot, (4..35,sp) argument block, saved regs above. */
+cw_fw:
+    mov d0,d2
+    mov d1,d3
+    mov sp,a0
+    add 4,a0
+    clr d0
+    mov 8,d1
+1:
+    mov d0,(a0)
+    add 4,a0
+    add -1,d1
+    bne 1b
+    call em1_fw_iface,[],4           /* a0 = fwOpe API object */
+    mov (a0),a2
+    add d3,a2
+    mov (a2),a2
+    mov (GUI_DISP2),d1
+    cmp 0,d1
+    beq 2f
+    mov 2,d1
+    bra 3f
+2:
+    mov 1,d1
+3:
+    mov d2,d0
+    mov sp,a1
+    add 4,a1
+    calls (a2)
+    ret [d2,d3,a2,a3],56
+
+/* cw_enter (a2 = P, d2 = axis 0..2) */
+cw_enter:
+    movbu d2,(P_WAXIS,a2)
+    mov 255,d0
+    movbu d0,(P_WCUR,a2)
+    mov 1,d0
+    movbu d0,(P_WON,a2)
+    mov FW_TYPE_CC,d0
+    mov FW_SLOT_STOP,d1
+    call cw_fw,[d2,d3,a2,a3],56
+    mov FW_TYPE_WHEEL,d0
+    mov FW_SLOT_START,d1
+    call cw_fw,[d2,d3,a2,a3],56
+    mov FW_DRAW,d0
+    mov FW_SLOT_DRAW,d1
+    call cw_fw,[d2,d3,a2,a3],56
+    ret [d2,d3,a2,a3],20
+
+/* cw_leave (a2 = P): back to the Color Creator ring if the wheel is up */
+cw_leave:
+    movbu (P_WON,a2),d0
+    cmp 0,d0
+    beq 1f
+    clr d0
+    movbu d0,(P_WON,a2)
+    mov FW_TYPE_WHEEL,d0
+    mov FW_SLOT_STOP,d1
+    call cw_fw,[d2,d3,a2,a3],56
+    mov FW_TYPE_CC,d0
+    mov FW_SLOT_START,d1
+    call cw_fw,[d2,d3,a2,a3],56
+    mov FW_DRAW,d0
+    mov FW_SLOT_DRAW,d1
+    call cw_fw,[d2,d3,a2,a3],56
+1:
+    ret [d2,d3,a2,a3],20
+
+/* cw_next_page (a2 = P): P_PAGE + 1 (wrap); entering the Wheel page starts the wheel on S, any other page leaves
+ * it (cw_leave does nothing when it is not up). */
+cw_next_page:
+    movhu (P_PAGE,a2),d0
+    inc d0
+    cmp N_PAGES,d0
+    bcs 1f
+    clr d0
+1:
+    movhu d0,(P_PAGE,a2)
+    cmp PG_WHEEL,d0
+    bne 2f
+    clr d2                           /* axis S */
+    call cw_enter,[d2,d3,a2,a3],20
+    ret [d2,d3,a2,a3],20
+2:
+    call cw_leave,[d2,d3,a2,a3],20
+    ret [d2,d3,a2,a3],20
+
+/* cw_down: from cc_up_down_common on the Wheel page (cc_up/cc_down frame: a2 = P, d3 = +1 Up / -1 Down).
+ * The Down arrow steps P_WAXIS S -> H -> L -> S and redraws (no stop / start). Up and the rear dial (the stock dial
+ * loop calls cc_up/cc_down per detent with P_DIAL = 1) do nothing. Returns 1 like the other pages.
+ * cw_axis: the step itself, also reached from cw_page (TRASH on the Wheel page) with the same frame. */
+cw_down:
+    cmp 0,d3
+    bge 1f
+    movbu (P_DIAL,a2),d0
+    cmp 0,d0
+    bne 1f
+cw_axis:
+    movbu (P_WAXIS,a2),d0
+    inc d0
+    cmp 3,d0
+    bcs 2f
+    clr d0
+2:
+    movbu d0,(P_WAXIS,a2)
+    movbu (P_WON,a2),d0
+    cmp 0,d0
+    beq 1f
+    mov FW_DRAW,d0
+    mov FW_SLOT_DRAW,d1
+    call cw_fw,[d2,d3,a2,a3],56
+1:
+    jmp cc_ret1
+
+/* cw_page: record+36 (calls entry: a0 = parent, d0 = event, d1 = arg). TRASH (0x9016) on the Wheel page steps the
+ * axis like Down (as Delete does on the E-P7 / PEN-F wheel); TRASH elsewhere steps the page (cc_info, as before);
+ * any other event leaves the wheel and goes to stock (cw_event). Frame 28 as cc_up / cc_down. */
+cw_page:
+    cmp 0x9016,d0
+    bne cw_event
+    movm [d2,d3,a2,a3],(sp)
+    add -12,sp
+    mov a0,a3
+    mov d0,(4,sp)
+    mov d1,(8,sp)
+    call p_get,[d2,d3],12
+    cmp 0,a0
+    beq 1f
+    mov a0,a2
+    movhu (P_PAGE,a2),d2
+    cmp PG_WHEEL,d2
+    bne 1f
+    jmp cw_axis
+1:
+    mov a3,a0
+    mov (4,sp),d0
+    mov (8,sp),d1
+    add 12,sp
+    movm (sp),[d2,d3,a2,a3]
+    jmp cc_info
+
+/* cw_pre_exit: calls-entered wrapper body shared by cw_event / cw_ok. Leaves the wheel (and goes back to Film)
+ * with d0, d1, a0, MDR and the stack as at entry, then jumps to the stock handler in a1. On record+36 events
+ * (cw_event: 0x900d, 0x903e, 0x900e, 0x972b and the stock default branch, some of which keep the editor open) the
+ * children and view are refreshed as on a page step, so the screen shows Film rather than a stale "Wheel S". */
+cw_event:
+    mov em1_cc_page,a1
+    bra cw_pre_exit
+cw_ok:
+    mov em1_cc_ok,a1
+cw_pre_exit:
+    movm [d2,d3,a2,a3],(sp)
+    add -24,sp                       /* (0,sp) call slot of our calls; (4..23,sp) saved d0, d1, a0, a1, MDR */
+    mov d0,(4,sp)
+    mov d1,(8,sp)
+    mov a0,(12,sp)
+    mov a1,(16,sp)
+    mov mdr,d0
+    mov d0,(20,sp)
+    call p_get,[d2,d3],12
+    cmp 0,a0
+    beq 1f
+    mov a0,a2
+    movbu (P_WON,a2),d0
+    cmp 0,d0
+    beq 1f
+    call cw_leave,[d2,d3,a2,a3],20
+    clr d0
+    movhu d0,(P_PAGE,a2)             /* PG_FILM */
+    mov (16,sp),d0
+    cmp em1_cc_page,d0
+    bne 1f                           /* OK: the stock commit runs as before */
+    mov (12,sp),a3                   /* parent */
+    call sync_children_and_view,[d2,d3,a2,a3],20
+1:
+    mov (20,sp),d0
+    mov d0,mdr
+    mov (4,sp),d0
+    mov (8,sp),d1
+    mov (12,sp),a0
+    mov (16,sp),a1
+    add 24,sp
+    movm (sp),[d2,d3,a2,a3]
+    jmp (a1)
+
+/* cw_guide: from cc_guide (a2 = text destination, (12,sp) = P): "Wheel S " + look name */
+cw_guide:
+    mov str_wheel,a1
+    call copy_ascii_to_u16,[],4
+    mov (12,sp),a0
+    movbu (P_WAXIS,a0),d1
+    cmp 3,d1
+    bcs 1f
+    clr d1
+1:
+    mov str_wheel_axes,a1
+    add d1,a1
+    movbu (a1),d1
+    movhu d1,(a2)
+    mov 0x20,d1
+    movhu d1,(2,a2)
+    add 4,a2
+    mov (12,sp),a0
+    call look_name_ptr,[],4
+    call copy_ascii_to_u16,[],4
+    jmp guide_done
+
+/* cw_scp_label: from scp_cc_label (d0 = page, not Film) -> a1 = SCP label, back at scp_set_text */
+cw_scp_label:
+    mov u16_wheel,a1
+    cmp PG_WHEEL,d0
+    beq 2f
+    add -(PG_CHROMA - 1),d0          /* Chroma, Luminance, Strength -> scp_page_ptrs 1..3; Halo -> 0 as before */
+    and 3,d0
+    asl 2,d0
+    mov scp_page_ptrs,a1
+    add d0,a1
+    mov (a1),a1
+2:
+    jmp scp_set_text
+
+str_wheel:
+    .asciz "Wheel "
+str_wheel_axes:
+    .ascii "SHL"
+.balign 2
+u16_wheel:
+    .hword 'C','o','l','o','r',' ','W','h','e','e','l',0
 .endif

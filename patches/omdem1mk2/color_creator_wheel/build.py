@@ -53,6 +53,10 @@ CAVE_ADDR = 0x612e6900
 # Halo page (EM1_CC_HALO=1): section .hlui in the 100 KB gap that the halation patch makes Section 6 load
 # (patches/omdem1mk2/halation: 0x612e7000.. holds its code, well below this address).
 HALO_UI_ADDR, GAP_END = 0x612f0000, 0x61300000
+# Wheel page (EM1_CC_WHEEL=1): section .cwui after ../color_wheel's cw_get (0x612f1800) in the same gap.
+CW_UI_ADDR = 0x612f1900
+OK_HOOK = {'name': 'cw_ok', 'addr': 0x61259c68, 'stock_target': 0x60e8ce8c, 'sym': 'cw_ok',
+           'why': 'Color Creator record+40 (OK, commits picture mode 21): leave the wheel first (EM1_CC_WHEEL)'}
 
 POINTER_HOOKS = [
     {
@@ -143,6 +147,8 @@ SYMBOLS = {
     'em1_scp_stock_format': 0x60ee8cd1,
     'em1_scp_text': 0x60db275e,
     'em1_getter': 0x6005e6cf,       # property getter (d0 key, d1 index, a0 0), [d2,d3],12
+    'em1_fw_iface': 0x6082602c,     # fwOpe API object (wheel pages: vtable +28 start / +32 stop / +48 draw)
+    'em1_cc_ok': 0x60e8ce8c,        # stock record+40 (OK)
 }
 
 
@@ -178,14 +184,19 @@ def build():
         halo = os.environ.get('EM1_CC_HALO') == '1'           # Halo page (halation step 4f)
         lookmem = os.environ.get('EM1_LOOKMEM') == '1'        # look memory (sid 965); needs the Halo build's gap
         assert halo or not lookmem, 'EM1_LOOKMEM=1 needs EM1_CC_HALO=1'
+        wheel = os.environ.get('EM1_CC_WHEEL') == '1'         # one Wheel page (Down steps S/H/L); needs the gap and color_wheel
+        assert halo or not wheel, 'EM1_CC_WHEEL=1 needs EM1_CC_HALO=1'
         subprocess.run([AS, '-I', str(Path(__file__).parent.parent), '-I', str(Path(__file__).parent)]
                        + (['--defsym', 'SPACE_PROBE=1'] if probe else [])
                        + (['--defsym', 'HALO=1'] if halo else [])
-                       + (['--defsym', 'LOOKMEM=1'] if lookmem else []) + ['-o', str(obj), str(src)], check=True)
+                       + (['--defsym', 'LOOKMEM=1'] if lookmem else [])
+                       + (['--defsym', 'CC_WHEEL=1'] if wheel else []) + ['-o', str(obj), str(src)], check=True)
 
         ld_cmd = [LD, '-Ttext', f'{CAVE_ADDR:#x}', '-e', '_start']
         if halo:
             ld_cmd.append(f'--section-start=.hlui={HALO_UI_ADDR:#x}')
+        if wheel:
+            ld_cmd.append(f'--section-start=.cwui={CW_UI_ADDR:#x}')
         # Shared-state routines live in sd_loader (Section 2); build it first (with EM1_LOOKMEM=1 for look memory).
         exports = json.loads((Path(__file__).parent.parent / 'sd_loader' /
                               ('exports_lookmem.json' if lookmem else 'exports.json')).read_text())
@@ -206,6 +217,10 @@ def build():
         if halo:
             subprocess.run([OBJCOPY, '-O', 'binary', '-j', '.hlui', str(elf), str(tmp / 'hlui.bin')], check=True)
             halo_payload = (tmp / 'hlui.bin').read_bytes()
+        cwui_payload = b''
+        if wheel:
+            subprocess.run([OBJCOPY, '-O', 'binary', '-j', '.cwui', str(elf), str(tmp / 'cwui.bin')], check=True)
+            cwui_payload = (tmp / 'cwui.bin').read_bytes()
 
         nm_out = subprocess.check_output([NM, str(elf)]).decode()
         sym_map = {}
@@ -231,7 +246,7 @@ def build():
     edits_list = []
 
     # Emit pointer table edits
-    for h in POINTER_HOOKS:
+    for h in POINTER_HOOKS + ([OK_HOOK] if wheel else []):
         hook_off = h['addr'] - BASE
         actual_stock = main[hook_off:hook_off + 4]
         expected_stock = struct.pack('<I', h['stock_target'])
@@ -306,12 +321,30 @@ def build():
         'edits': edits_list
     }
 
-    out_file = Path(__file__).parent / ('edits_halo_lookmem.json' if lookmem else
+    if wheel:
+        # after cw_get (../color_wheel/edits.json, built first), 16-byte guards, inside the gap
+        cw = json.loads((Path(__file__).parent.parent / 'color_wheel' / 'edits.json').read_text())['edits'][0]
+        cw_end = int(cw['addr'], 16) + len(cw['new']) // 2
+        assert cw_end + 16 <= CW_UI_ADDR, f'.cwui overlaps cw_get (ends {cw_end:#x})'
+        assert cwui_payload and CW_UI_ADDR + len(cwui_payload) <= GAP_END - 16, '.cwui runs past the gap'
+        woff = CW_UI_ADDR - BASE
+        assert all(b == 0xFF for b in main[woff - 16:woff + len(cwui_payload) + 16]), 'wheel UI area not 0xFF'
+        edits_list.append({
+            'kind': '0x100',
+            'addr': f'{CW_UI_ADDR:#x}',
+            'expect': 'ff' * len(cwui_payload),
+            'new': cwui_payload.hex(),
+            'why': f'Color Creator Wheel page (Down / TRASH step S/H/L), fwOpe surface switching and moved page tables in the 100 KB gap '
+                   f'({len(cwui_payload)} bytes; needs the halation patch and ../color_wheel cw_get)',
+        })
+
+    out_file = Path(__file__).parent / ((('edits_halo_lookmem' if lookmem else 'edits_halo') + '_wheel.json') if wheel else
+                                        'edits_halo_lookmem.json' if lookmem else
                                         'edits_halo.json' if halo else 'edits.json')
     out_file.write_text(json.dumps(edits, indent=2) + '\n')
     print(
         f'Generated {out_file} ({len(cave_payload)} bytes cave at {CAVE_ADDR:#x}..{cave_end:#x}, '
-        f'{len(POINTER_HOOKS)} pointer hooks)'
+        f'{len(POINTER_HOOKS) + wheel} pointer hooks)'
     )
 
 

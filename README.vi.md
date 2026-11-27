@@ -2,6 +2,32 @@
 
 **[English](README.md)** · **Tiếng Việt**
 
+## Cài nhanh
+
+Dùng **Olympus OM-D E-M1 Mark II đang chạy firmware gốc 3.7**. Sạc đầy pin, sao lưu cài đặt máy và dữ liệu trên
+thẻ trước khi bắt đầu. [Hướng dẫn sao lưu và cài đặt](docs/huong-dan-firmware-em1-ii.md#sao-luu)
+
+1. Tải `caduceus-build.exe` cho Windows 64 bit hoặc `caduceus-em1mk2-source.zip` để dùng launcher Python.
+   [Tải bản em1mk2-v0.4c24](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24)
+2. Đặt EXE trong thư mục bạn có quyền ghi rồi nhấp đúp. Nếu dùng ZIP, cài Python 3.10 trở lên, giải nén toàn bộ
+   rồi nhấp đúp `Build Caduceus (Windows).bat` hoặc `Build Caduceus (Mac).command`. Trên Linux, chạy
+   `build-caduceus-linux.sh` trong Terminal.
+3. Khi tải lần đầu, đọc giấy phép OM Digital Solutions trong cửa sổ chạy và gõ `yes` nếu đồng ý. Builder kiểm
+   tệp 3.7 gốc và tạo gói v0.4c24 trong `out/em1mk2-v0.4c24/` cạnh chương trình.
+4. Cắm thẻ SD, đối chiếu đúng ổ rồi xác nhận chép. Thẻ phải có thư mục `DCIM`. Nếu chương trình không thấy thẻ,
+   bạn có thể chép bằng tay. [Hướng dẫn chép thẻ](docs/huong-dan-firmware-em1-ii.md#chep-the)
+5. Eject thẻ, lắp vào **khe 1** khi máy tắt, giữ **OK** rồi bật máy. Đợi đèn từ sáng liên tục chuyển sang nhấp nháy
+   đều khoảng hai lần mỗi giây. Xem bước nạp thử 3.7 gốc trước khi cài và cách khôi phục sau này.
+   [Hướng dẫn nạp và khôi phục](docs/huong-dan-firmware-em1-ii.md#nap)
+
+EXE chưa ký nên Windows SmartScreen có thể hiện cảnh báo. Bạn có thể dùng ZIP và launcher Python. Đối chiếu
+SHA-256 của tệp vừa tải với `SHA256SUMS` trên trang phát hành.
+
+| Bản | Cách chọn |
+|---|---|
+| **v0.4c24** | Bản mặc định nên dùng. Halo mặc định Off. Đã kiểm trên giả lập, đang chờ thử trên máy thật. |
+| v0.4c25t / v0.4c26t / v0.4c27t | Bản thử, chỉ chọn bằng `--release`. |
+
 **Caduceus cho E-M1 II** là bản port của [Caduceus](https://github.com/cakelesscoder/caduceus-ep7) (bộ patch firmware
 mã nguồn mở cho Olympus PEN E-P7) sang **Olympus OM-D E-M1 Mark II firmware 3.7** (build 3700, model 0x1250). Nó đưa
 các look phim của Caduceus vào picture mode **Color Creator** của máy, qua đúng engine màu mà E-P7 dùng. Ngoài ra còn
@@ -11,8 +37,8 @@ màu quanh vùng sáng, chỉnh ở trang **Halo** của Color Creator).
 Nó đọc **cùng định dạng look, cùng mã chia sẻ và cùng file trên thẻ** với bản E-P7 và OM-3, nên một look dùng được trên
 mọi máy.
 
-**Bản thử công khai: cần người thử.** Có ba bản đã sẵn sàng, mỗi bản thêm một tính năng so với bản trước; chưa bản nào
-chạy trên máy thật. **[Tham gia thử](#tham-gia-thử)** · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** (tiếng Anh) ·
+**Bản thử công khai: cần người thử.** v0.4c24 và ba bản thử sau đó đang chờ thử trên máy thật.
+**[Tham gia thử](#tham-gia-thử)** · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** (tiếng Anh) ·
 **[Ghi chú port](docs/PORT_EM1MK2.md)** (tiếng Anh) ·
 Hướng dẫn chi tiết (tính năng, sao lưu, cài, dùng từng tính năng, khôi phục): [đọc trên GitHub (Markdown)](docs/huong-dan-firmware-em1-ii.md) ·
 [bản HTML](docs/huong-dan-firmware-em1-ii.html) ·
@@ -41,6 +67,7 @@ với bản gốc); **[S]** = chỉ kiểm tĩnh. Chi tiết từng bản: [CHAN
 | Watchdog 10 giây → 30 giây, để lưu ảnh lâu không làm máy khởi động lại | [E] v0.4c24 |
 | Nhớ look: look Color Creator vẫn giữ sau khi tắt máy (`sd_loader`, `color_creator_wheel`) | [E] bản thử v0.4c25t |
 | WB shift theo look (A-B / G-M lấy từ look; CWB và các mode khác giữ như gốc) (`look_wb`) | [E] bản thử v0.4c26t, gồm cả khối WB lúc chụp chạy thật trên giả lập ([các bước thử](docs/OMD-EM1-II/thu-may-look-wb.md)) |
+| Vòng màu: trang **Wheel** trong Color Creator vẽ look lên vòng màu 12 ô của máy; nút xuống hoặc TRASH đổi S / H / L; chỉ hiển thị (`color_wheel`, `color_creator_wheel`) | [E] bản thử v0.4c27t; chưa thử trên máy ([các bước thử](docs/OMD-EM1-II/thu-may-color-wheel.md)) |
 | Sharpness dạng thang tuyến tính (chỉ bản thử `v0.4c19t`) | [E] |
 | Blacks / Whites, look B&W thật, grain, tắt làm nét, NR theo look | chưa port |
 
@@ -57,8 +84,9 @@ về Off là xong. Lúc khởi động nó chỉ thêm watchdog 30 giây và m�
 file khôi phục gốc một lần (bước 0 trong hướng dẫn), rồi mới nạp v0.4c24.
 
 **v0.4c25t** = v0.4c24 cộng nhớ look (sid 965). **v0.4c26t** = v0.4c25t cộng WB shift theo look, và trình chỉnh giờ tắt
-look trước khi đổi look, để không tấm chụp nào ghép trạng thái của look này với look khác. Cả hai là bản thử trên máy,
-seal với mọi bước kiểm của bản trước cộng harness riêng của nó.
+look trước khi đổi look, để không tấm chụp nào ghép trạng thái của look này với look khác. **v0.4c27t** = v0.4c26t cộng
+trang vòng màu (chỉ hiển thị: không đổi setting hay ảnh chụp). Cả ba là bản thử trên máy, seal với mọi bước kiểm của bản
+trước cộng harness riêng của nó.
 
 ## Tham gia thử
 
@@ -72,16 +100,23 @@ trên máy bạn.
 | 1 | **v0.4c24** | halation (trang Halo, mặc định Off), watchdog 30 giây, trên nền look / XPan / 21:9 / video 9 giờ / focus stacking | [thu-may-halation.md](docs/OMD-EM1-II/thu-may-halation.md) |
 | 2 | **v0.4c25t** | look Color Creator được nhớ sau khi tắt máy | [thu-may-nho-look.md](docs/OMD-EM1-II/thu-may-nho-look.md) |
 | 3 | **v0.4c26t** | áp WB shift của từng look màu (năm look có sẵn đổi màu: Nostalgic, Gold 200, Kodachrome64, Portra 400, CineStill800) | [thu-may-look-wb.md](docs/OMD-EM1-II/thu-may-look-wb.md) |
+| 4 | **v0.4c27t** | trang Wheel trong Color Creator hiện look trên vòng màu (nút xuống / TRASH: S, H, L); chỉ hiển thị | [thu-may-color-wheel.md](docs/OMD-EM1-II/thu-may-color-wheel.md) |
 
 **Báo kết quả** từng bước trong [Issues](https://github.com/xtruong88/caduceus-em1ii/issues): tên bản, bạn đã làm gì,
 kết quả ra sao (chạy tốt / có gì lạ / treo), và các ảnh JPEG mà hướng dẫn yêu cầu. Báo treo máy hoặc không khởi động
 được là có ích nhất: ghi rõ thao tác cuối cùng bạn đã bấm.
 
-## Cài đặt
+<a id="cài-đặt"></a>
 
-Cần có: E-M1 Mark II firmware **3.7** (Setup › Firmware), **pin đầy**, thẻ SD ở **khe 1**, và **Python 3** trên máy
+## Cho người dùng nâng cao
+
+Cần có E-M1 Mark II firmware **3.7** (Setup › Firmware), **pin đầy**, thẻ SD ở **khe 1**, và **Python 3.10+** trên máy
 tính (Windows: tải ở [python.org](https://www.python.org/downloads/), nhớ tick "Add python.exe to PATH"). Không cần
 trình biên dịch hay công cụ nào khác.
+
+Để chỉ định ổ thẻ trong chế độ cài nhanh, chạy `caduceus-build.exe --sd E:` và thay `E:` bằng ổ thẻ của bạn.
+Các launcher Python cũng nhận tùy chọn này. Với tác vụ tự động, dùng `--accept-license` sau khi đã đọc và đồng ý
+với giấy phép OM.
 
 1. **Cập nhật lên firmware gốc 3.7 trước** nếu máy đang ở bản cũ hơn (dùng OM Workspace, xem hướng dẫn ở trên).
 2. **Tải repo này:** `git clone https://github.com/xtruong88/caduceus-em1ii`, hoặc bấm **Code › Download ZIP** (hoặc
@@ -95,8 +130,9 @@ trình biên dịch hay công cụ nào khác.
    py caduceus.py verify out/em1mk2-thu-may/4-v0.4c24
    ```
 
-   Ở các bước sau dùng `--release v0.4c25t --out out/em1mk2-thu-may/5-v0.4c25t` và
-   `--release v0.4c26t --out out/em1mk2-thu-may/6-v0.4c26t`: các hướng dẫn thử dùng đúng tên thư mục này.
+   Ở các bước sau dùng `--release v0.4c25t --out out/em1mk2-thu-may/5-v0.4c25t`,
+   `--release v0.4c26t --out out/em1mk2-thu-may/6-v0.4c26t` và
+   `--release v0.4c27t --out out/em1mk2-thu-may/7-v0.4c27t`: các hướng dẫn thử dùng đúng tên thư mục này.
 
    `verify` phải kết thúc bằng `All good.`. Nếu đã có sẵn file của OM (`OLY_E_125_3700_0000_0000.BIN`), thêm
    `--stock <đường dẫn tới file>` vào lệnh `build`.

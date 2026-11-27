@@ -1,7 +1,7 @@
 # Hướng dẫn Caduceus cho E-M1 Mark II
 
 Olympus OM-D E-M1 Mark II · nền firmware chính hãng 3.7 (build 3700) · bản nên dùng: **v0.4c24** · bản thử: **v0.4c25t** (nhớ look),
-**v0.4c26t** (WB theo look).
+**v0.4c26t** (WB theo look), **v0.4c27t** (vòng màu).
 Trang này dành cho người mới: Caduceus là gì, cách sao lưu, cách nạp, cách dùng từng tính năng trên máy và cách quay về
 firmware gốc.
 
@@ -37,9 +37,9 @@ Máy nạp tệp như một bản cập nhật bình thường, qua thẻ SD, b�
 > - vùng nhớ mới không xung đột với firmware gốc;
 > - ở Halo Off, việc chụp ảnh đi đúng đường của firmware gốc.
 >
-> v0.4c24 **chưa được nạp vào máy thật**. Hai bản thử v0.4c25t (thêm nhớ look) và v0.4c26t (thêm WB theo look) cũng đã
-> qua mọi bước kiểm của bản trước cộng phần kiểm riêng, và cũng chưa nạp vào máy thật. Hãy làm đúng các bước sao lưu bên
-> dưới.
+> v0.4c24 **chưa được nạp vào máy thật**. Ba bản thử v0.4c25t (thêm nhớ look), v0.4c26t (thêm WB theo look) và v0.4c27t
+> (thêm vòng màu) cũng đã qua mọi bước kiểm của bản trước cộng phần kiểm riêng, và cũng chưa nạp vào máy thật. Hãy làm
+> đúng các bước sao lưu bên dưới.
 
 <a id="tinh-nang"></a>
 
@@ -58,6 +58,7 @@ Nhãn: ✅ đã chạy trên máy · 🧪 kiểm trên giả lập · ⏳ chưa 
 | Watchdog 30 s | Máy chờ 30 s thay vì 10 s trước khi tự khởi động lại, để ảnh có quầng kịp lưu. | 🧪 v0.4c22t+ |
 | Nhớ look | Look đã chọn trong Color Creator được giữ sau khi tắt máy và tự áp lại ở lần nhấn nửa cò đầu. | 🧪 bản thử v0.4c25t · ⏳ chưa thử trên máy |
 | WB theo look | Look màu áp WB shift (A-B, G-M) của riêng nó thay cho fine-tune WB của bạn; CWB và các mode khác giữ nguyên. | 🧪 bản thử v0.4c26t · ⏳ chưa thử trên máy |
+| Vòng màu | Trang Wheel trong Color Creator vẽ look lên vòng màu 12 ô; nút xuống hoặc TRASH đổi trục S / H / L. Chỉ hiển thị. | 🧪 bản thử v0.4c27t · ⏳ chưa thử trên máy |
 | Sharpness tuyến tính | −2..+2 thành tắt / 25 / 50 / 75 / 100 %. Chỉ có trong bản thử riêng `v0.4c19t`, không có trong v0.4c24. | 🧪 bản thử |
 | Chưa có | B&W thật (look đơn sắc chỉ giảm độ bão hoà), Blacks/Whites, grain, tắt sharpening, NR theo look. | ⏳ chưa port |
 
@@ -75,8 +76,8 @@ Phía máy tính, repo có:
   3.7, cập nhật bản chính hãng trước bằng OM Workspace ([hướng dẫn](huong-dan-cap-nhat-firmware-om-workspace.md)).
 - **Pin sạc đầy**, tốt nhất thêm một pin dự phòng.
 - **Thẻ SD** máy đã đọc được, lắp ở **khe 1** khi nạp.
-- **Máy tính** có [Python 3.10 trở lên](https://www.python.org/downloads/) (trên Windows, tích “Add python.exe to PATH” khi
-  cài) và bản sao repo này.
+- **Máy tính** Windows 64 bit để chạy EXE, hoặc máy có [Python 3.10 trở lên](https://www.python.org/downloads/) để
+  dùng gói ZIP. Trên Windows, tích “Add python.exe to PATH” khi cài Python.
 - Cáp USB và **OM Workspace** để sao lưu cài đặt máy (không bắt buộc nhưng nên làm).
 
 <a id="sao-luu"></a>
@@ -108,6 +109,16 @@ máy bạn.
 
 ## 5. Tạo gói firmware trên máy tính
 
+1. Tải `caduceus-build.exe` cho Windows 64 bit hoặc `caduceus-em1mk2-source.zip`. [Trang tải v0.4c24](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24)
+2. Đặt EXE trong thư mục có quyền ghi rồi nhấp đúp. Với ZIP, giải nén toàn bộ và nhấp đúp `Build Caduceus (Windows).bat`
+   hoặc `Build Caduceus (Mac).command`. Trên Linux, chạy `build-caduceus-linux.sh` trong Terminal.
+3. Đọc giấy phép OM Digital Solutions và gõ `yes` nếu đồng ý. Sau khi tải tệp 3.7 gốc, builder kiểm hash rồi tạo gói
+   **v0.4c24** trong `out/em1mk2-v0.4c24/` cạnh chương trình. Nếu đã có tệp OM đúng hash, builder dùng tệp đó.
+
+SmartScreen có thể hiện cảnh báo vì EXE chưa ký. Bạn có thể dùng ZIP và launcher Python.
+
+### Dùng dòng lệnh
+
 Mở PowerShell (Windows) hoặc Terminal (macOS/Linux) trong thư mục repo, nơi có `caduceus.py`. Trên macOS/Linux, thay
 `python` bằng `python3` nếu cần.
 
@@ -116,10 +127,10 @@ python caduceus.py build --camera em1mk2 --release v0.4c24 --out out/em1mk2-v0.4
 python caduceus.py verify out/em1mk2-v0.4c24
 ```
 
-- Lệnh `build` tải tệp 3.7 từ máy chủ OM. Nếu đã có tệp đúng hash, thêm
+- Lệnh `build` hỏi đồng ý giấy phép trước khi tải tệp 3.7 từ máy chủ OM. Nếu đã có tệp đúng hash, thêm
   `--stock "đường-dẫn\OLY_E_125_3700_0000_0000.BIN"`.
 - Thư mục `--out` phải mới hoặc trống.
-- Bản thử: thay `v0.4c24` bằng `v0.4c25t` hoặc `v0.4c26t` ở cả hai lệnh (và đổi tên thư mục `--out`). Chỉ nạp bản sau
+- Bản thử: thay `v0.4c24` bằng `v0.4c25t`, `v0.4c26t` hoặc `v0.4c27t` ở cả hai lệnh (và đổi tên thư mục `--out`). Chỉ nạp bản sau
   khi bản trước đã chạy tốt.
 - Chỉ dùng gói khi `verify` báo **All good.** và có dòng khớp `releases/em1mk2/v0.4c24/SHA256SUMS`.
 
@@ -136,6 +147,10 @@ python caduceus.py verify out/em1mk2-v0.4c24
 <a id="chep-the"></a>
 
 ## 6. Chép lên thẻ SD
+
+Chế độ cài nhanh tìm thẻ có thư mục `DCIM`. Đối chiếu đúng ổ rồi xác nhận chép. Builder kiểm lại hash sau khi
+chép tệp cài và giữ pack look có định dạng hợp lệ trên thẻ. Nếu không tự nhận diện được thẻ, có thể chỉ định ổ
+bằng `caduceus-build.exe --sd E:` (thay `E:` bằng ổ của bạn) hoặc chép tay theo các bước dưới đây.
 
 1. Cắm thẻ vào máy tính, mở **gốc thẻ** (cùng cấp với `DCIM/`).
 2. Tạo thư mục `DCOLYMP` nếu chưa có. Chuyển các tệp cập nhật cũ trong đó ra máy tính.
@@ -163,6 +178,8 @@ Sau đó Eject rồi rút thẻ.
 <a id="nap"></a>
 
 ## 7. Nạp firmware vào máy
+
+Nếu đã dùng builder để chép thẻ, vẫn kiểm tra trong `DCOLYMP/` chỉ có đúng tệp cập nhật cần nạp.
 
 > [!TIP]
 > **Bước 0, nên làm nếu bạn chỉ có một máy:** nạp `restore/E1259999.BIN` trước. Tệp này là firmware 3.7 chính hãng của
@@ -315,6 +332,22 @@ Các bước thử: [thu-may-nho-look.md](OMD-EM1-II/thu-may-nho-look.md).
 
 Các bước thử: [thu-may-look-wb.md](OMD-EM1-II/thu-may-look-wb.md).
 
+<a id="vong-mau"></a>
+
+### 9.9 Vòng màu (bản thử v0.4c27t)
+
+- Trong trình chỉnh Color Creator, INFO từ Film sang trang **Wheel**: vòng Color Creator được thay bằng vòng màu 12 ô,
+  đa giác vẽ trục S của look đang chọn.
+- Trên trang Wheel:
+  - **nút xuống** hoặc **TRASH** đổi trục S → H → L → S; dòng guide ghi `Wheel S`, `Wheel H`, `Wheel L` kèm tên look;
+  - **INFO** sang trang Chroma;
+  - **lên, trái, phải** và hai **vòng xoay** không làm gì;
+  - **OK**, **MENU** và các sự kiện khác của máy (ví dụ nút tuỳ biến) rời trang Wheel và đưa trình chỉnh về Film.
+- Các trang sau đó vẫn như cũ: Chroma, Luminance, Strength, Halo. Rời trang Wheel là vòng Color Creator gốc trở lại.
+- Chỉ hiển thị: không đổi setting, không đổi ảnh chụp.
+
+Các bước thử: [thu-may-color-wheel.md](OMD-EM1-II/thu-may-color-wheel.md).
+
 <a id="khoi-phuc"></a>
 
 ## 10. Quay về firmware gốc hoặc bản cũ
@@ -366,8 +399,8 @@ thấy, gửi ảnh mẫu kèm thông số.
 <details><summary>Tôi có cần nạp lần lượt nhiều bản không?</summary>
 
 Không. Với người dùng, nạp **một lần v0.4c24** là đủ. Các bản thử từng bước (v0.4c17 → v0.4c22t → v0.4c23t) chỉ dùng khi
-cần tìm phần nào gây lỗi. Nếu muốn thử tính năng mới, đi lần lượt v0.4c24 → v0.4c25t → v0.4c26t, mỗi bản chỉ nạp khi bản
-trước đã chạy tốt.
+cần tìm phần nào gây lỗi. Nếu muốn thử tính năng mới, đi lần lượt v0.4c24 → v0.4c25t → v0.4c26t → v0.4c27t, mỗi bản chỉ
+nạp khi bản trước đã chạy tốt.
 
 </details>
 
@@ -387,6 +420,7 @@ Bình thường: Caduceus giữ nguyên số phiên bản. Hãy kiểm tra bằn
 | **v0.4c24** | **Nên dùng.** Mọi tính năng ở mục 2 cộng halation, Halo mặc định Off. |
 | v0.4c25t | Bản thử: v0.4c24 cộng nhớ look. Nạp sau khi v0.4c24 chạy tốt. |
 | v0.4c26t | Bản thử: v0.4c25t cộng WB theo look. Nạp sau khi v0.4c25t chạy tốt. |
+| v0.4c27t | Bản thử: v0.4c26t cộng vòng màu (trang Wheel, chỉ hiển thị). Nạp sau khi v0.4c26t chạy tốt. |
 | v0.4c17 | Bản nền không có halation. Dùng để quay về nếu không muốn halation. |
 | v0.4c22t | Bản thử chẩn đoán: đi đường xử lý mới nhưng không vẽ quầng. Chỉ dùng khi tìm lỗi. |
 | v0.4c23t | Bản thử: quầng cố định ở mức Med. Chỉ dùng khi tìm lỗi. |
@@ -398,5 +432,5 @@ Có thể xem danh sách bằng `python caduceus.py list --camera em1mk2`.
 Tài liệu liên quan: [README](../README.vi.md) · [Changelog E-M1 II](../patches/omdem1mk2/CHANGELOG.md) ·
 [Ghi chú port](PORT_EM1MK2.md) · [Quy trình thử halation](OMD-EM1-II/thu-may-halation.md) ·
 [Thử nhớ look](OMD-EM1-II/thu-may-nho-look.md) · [Thử WB theo look](OMD-EM1-II/thu-may-look-wb.md) ·
-[Cập nhật firmware chính hãng bằng OM Workspace](huong-dan-cap-nhat-firmware-om-workspace.md) ·
+[Thử vòng màu](OMD-EM1-II/thu-may-color-wheel.md) · [Cập nhật firmware chính hãng bằng OM Workspace](huong-dan-cap-nhat-firmware-om-workspace.md) ·
 [Firmware guide (tiếng Anh)](FIRMWARE_GUIDE.md)

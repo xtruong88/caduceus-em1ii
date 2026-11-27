@@ -2,6 +2,34 @@
 
 **English** · **[Tiếng Việt](README.vi.md)**
 
+## Quick start
+
+Use an **Olympus OM-D E-M1 Mark II on official firmware 3.7**. Charge the battery and back up the camera settings
+and SD card before you start. [Backup and installation guide](docs/huong-dan-firmware-em1-ii.md#sao-luu)
+
+1. Download `caduceus-build.exe` for 64-bit Windows, or `caduceus-em1mk2-source.zip` for the Python launchers.
+   [Downloads for em1mk2-v0.4c24](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24)
+2. Make sure the installer is in a writable folder and double-click the EXE. For the ZIP, install Python 3.10+,
+   extract everything, then double-click `Build Caduceus (Windows).bat` or `Build Caduceus (Mac).command`.
+   On Linux, run `build-caduceus-linux.sh` in a terminal.
+3. For the first download, read the OM Digital Solutions licence shown by the builder and type `yes` if you
+   accept. The builder verifies the official 3.7 firmware and writes the v0.4c24 package to
+   `out/em1mk2-v0.4c24/` beside the installer.
+4. Insert the SD card, check the drive shown, and confirm the copy. The card must have a `DCIM` folder.
+   If the card is missed, copy the files yourself. [SD card instructions](docs/huong-dan-firmware-em1-ii.md#chep-the)
+5. Eject the card, put it in **slot 1** with the camera off, then hold **OK** while switching on. Leave the camera
+   alone while the LED is steady. A regular blink about twice a second means the update is finished. The guide
+   explains the recommended first flash of stock 3.7 and how to restore it later.
+   [Flash and restore instructions](docs/huong-dan-firmware-em1-ii.md#nap)
+
+Windows SmartScreen may flag the unsigned EXE. The ZIP and Python launcher are also available. Compare the
+download's SHA-256 against the `SHA256SUMS` file on the release page.
+
+| Build | Installation |
+|---|---|
+| **v0.4c24** | Recommended default. Halation starts Off. Verified in the emulator and awaiting camera testing. |
+| v0.4c25t / v0.4c26t / v0.4c27t | Camera-test builds. Select one explicitly with `--release`. |
+
 **Caduceus for E-M1 II** is a port of [Caduceus](https://github.com/cakelesscoder/caduceus-ep7) (open-source
 firmware patches for the Olympus PEN E-P7) to the **Olympus OM-D E-M1 Mark II on firmware 3.7** (build 3700,
 model 0x1250). It brings Caduceus film looks to the camera's **Color Creator** picture mode, through the same
@@ -11,8 +39,8 @@ stacking with any lens and **halation** (a tinted glow around highlights, set on
 It reads the **same look format, share codes and card files** as the E-P7 and OM-3 ports, so one look works on
 every body.
 
-**Public beta: testers wanted.** Three builds are ready, each adding one feature to the one before; none has run
-on a camera yet. **[Become a tester](#become-a-tester)** · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** ·
+**Public beta: testers wanted.** v0.4c24 and the three later test builds are awaiting camera testing.
+**[Become a tester](#become-a-tester)** · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** ·
 **[Port notes](docs/PORT_EM1MK2.md)** ·
 Vietnamese guides: what it does, backup, install, every feature, restore ([Markdown](docs/huong-dan-firmware-em1-ii.md) ·
 [HTML](docs/huong-dan-firmware-em1-ii.html)) ·
@@ -41,6 +69,7 @@ against stock); **[S]** = static checks only. Details per build: [CHANGELOG](pat
 | Watchdog limit 10 s → 30 s, so a long save cannot restart the camera | [E] v0.4c24 |
 | Look memory: the Color Creator look survives power-off (`sd_loader`, `color_creator_wheel`) | [E] test build v0.4c25t |
 | WB shift per look (A-B / G-M from the look; CWB and other modes stay stock) (`look_wb`) | [E] test build v0.4c26t, including the capture WB block run natively ([test steps](docs/OMD-EM1-II/thu-may-look-wb.md)) |
+| Colour wheel: a Color Creator **Wheel** page draws the look on the camera's 12-sector colour wheel; Down or TRASH steps S / H / L; display only (`color_wheel`, `color_creator_wheel`) | [E] test build v0.4c27t; not camera-tested ([test steps](docs/OMD-EM1-II/thu-may-color-wheel.md)) |
 | Sharpness as a linear scale (test build `v0.4c19t` only) | [E] |
 | Blacks / Whites, true B&W looks, grain, sharpening off, NR per look | not ported |
 
@@ -58,8 +87,9 @@ not yet flashed on a camera. Recommended first time: flash the stock restore fil
 v0.4c24.
 
 **v0.4c25t** = v0.4c24 plus look memory (sid 965). **v0.4c26t** = v0.4c25t plus WB shift per look, and the editor now
-switches the look off before it changes it, so no capture pairs one look's state with another's. Both are camera-test
-builds sealed with every check of the build before plus their own harness.
+switches the look off before it changes it, so no capture pairs one look's state with another's. **v0.4c27t** =
+v0.4c26t plus the colour wheel page (display only: no setting or capture changes). All three are camera-test builds
+sealed with every check of the build before plus their own harness.
 
 ## Become a tester
 
@@ -73,16 +103,23 @@ the one before worked on your camera.
 | 1 | **v0.4c24** | halation (Halo page, starts Off), 30 s watchdog, on top of looks / XPan / 21:9 / 9 h video / focus stacking | [thu-may-halation.md](docs/OMD-EM1-II/thu-may-halation.md) |
 | 2 | **v0.4c25t** | the Color Creator look is remembered after power-off | [thu-may-nho-look.md](docs/OMD-EM1-II/thu-may-nho-look.md) |
 | 3 | **v0.4c26t** | each colour look's WB shift is applied (five built-in looks change colour: Nostalgic, Gold 200, Kodachrome64, Portra 400, CineStill800) | [thu-may-look-wb.md](docs/OMD-EM1-II/thu-may-look-wb.md) |
+| 4 | **v0.4c27t** | a Color Creator Wheel page shows the look on the colour wheel (Down / TRASH: S, H, L); display only | [thu-may-color-wheel.md](docs/OMD-EM1-II/thu-may-color-wheel.md) |
 
 **Report** each step in an [issue](https://github.com/xtruong88/caduceus-em1ii/issues): build name, what you did,
 what happened (works / odd / froze), and the JPEGs the guide asks for. A freeze or failed boot is the most useful
 report: say exactly what you pressed last.
 
-## Install
+<a id="install"></a>
+
+## Advanced installation
 
 You need: an E-M1 Mark II on firmware **3.7** (Setup › Firmware), a **full battery**, an SD card in **slot 1**,
-and **Python 3** on your computer (Windows: [python.org](https://www.python.org/downloads/), tick
+and **Python 3.10+** on your computer (Windows: [python.org](https://www.python.org/downloads/), tick
 "Add python.exe to PATH"). No compiler or other tool is needed.
+
+To specify the card in one-press mode, use `caduceus-build.exe --sd E:`, replacing `E:` with your drive.
+The Python launchers accept the same option. For automated downloads, use `--accept-license` only after reading
+and accepting the OM licence.
 
 1. **Update to official 3.7 first** if the camera shows an older version (OM Workspace; see the Vietnamese guide above).
 2. **Get this repository:** `git clone https://github.com/xtruong88/caduceus-em1ii`, or download the
@@ -96,8 +133,9 @@ and **Python 3** on your computer (Windows: [python.org](https://www.python.org/
    py caduceus.py verify out/em1mk2-thu-may/4-v0.4c24
    ```
 
-   For the next steps use `--release v0.4c25t --out out/em1mk2-thu-may/5-v0.4c25t` and
-   `--release v0.4c26t --out out/em1mk2-thu-may/6-v0.4c26t`: the test guides use these folder names.
+   For the next steps use `--release v0.4c25t --out out/em1mk2-thu-may/5-v0.4c25t`,
+   `--release v0.4c26t --out out/em1mk2-thu-may/6-v0.4c26t` and
+   `--release v0.4c27t --out out/em1mk2-thu-may/7-v0.4c27t`: the test guides use these folder names.
 
    `verify` must end with "All good". Already have OM's file (`OLY_E_125_3700_0000_0000.BIN`)? Add
    `--stock <path to it>` to `build`.

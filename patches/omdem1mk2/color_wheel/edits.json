@@ -1,0 +1,279 @@
+{
+ "patch": "color_wheel",
+ "lookmem": true,
+ "edits": [
+  {
+   "kind": "0x100",
+   "addr": "0x612f1800",
+   "expect": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "new": "f8fef046044308470cddbfeb28ffc00cb000c905cc9800f84454a501c805cc8e00fac88a03c9068001ca77fac84104c80efac84604c808fac84704c907f84056ca6081fac163fca524c663a50cc40629f4cafaf1e5f84455f174a500c80ca501c80ea502c80fca46f8402c10ca28f84038ca05f840441081a000c205f23040409500a003c00728fd45caf9f1d4a500c205f23040a005c3048005a0fbc20480fb59045c085d0cf8fe10df000459045c085d0cf8fe10dc4d8ffefe",
+   "why": "colour wheel: cw_get (186 B, p_get 0x605803c8); needs the halation gap load"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a22e",
+   "expect": "d50596ff",
+   "new": "d3759700",
+   "why": "colour wheel: producer read of setting 906 at 0x6097a22d -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a263",
+   "expect": "a00596ff",
+   "new": "9e759700",
+   "why": "colour wheel: producer read of setting 1094 at 0x6097a262 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a308",
+   "expect": "fb0496ff",
+   "new": "f9749700",
+   "why": "colour wheel: producer read of setting 1095 at 0x6097a307 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a3ad",
+   "expect": "560496ff",
+   "new": "54749700",
+   "why": "colour wheel: producer read of setting 1089 at 0x6097a3ac -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a273",
+   "expect": "900596ff",
+   "new": "8e759700",
+   "why": "colour wheel: producer read of setting 937 at 0x6097a272 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a280",
+   "expect": "830596ff",
+   "new": "81759700",
+   "why": "colour wheel: producer read of setting 938 at 0x6097a27f -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a28d",
+   "expect": "760596ff",
+   "new": "74759700",
+   "why": "colour wheel: producer read of setting 939 at 0x6097a28c -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a29a",
+   "expect": "690596ff",
+   "new": "67759700",
+   "why": "colour wheel: producer read of setting 940 at 0x6097a299 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a2a7",
+   "expect": "5c0596ff",
+   "new": "5a759700",
+   "why": "colour wheel: producer read of setting 941 at 0x6097a2a6 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a2b4",
+   "expect": "4f0596ff",
+   "new": "4d759700",
+   "why": "colour wheel: producer read of setting 942 at 0x6097a2b3 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a2c1",
+   "expect": "420596ff",
+   "new": "40759700",
+   "why": "colour wheel: producer read of setting 943 at 0x6097a2c0 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a2ce",
+   "expect": "350596ff",
+   "new": "33759700",
+   "why": "colour wheel: producer read of setting 944 at 0x6097a2cd -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a2db",
+   "expect": "280596ff",
+   "new": "26759700",
+   "why": "colour wheel: producer read of setting 945 at 0x6097a2da -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a2e8",
+   "expect": "1b0596ff",
+   "new": "19759700",
+   "why": "colour wheel: producer read of setting 946 at 0x6097a2e7 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a2f5",
+   "expect": "0e0596ff",
+   "new": "0c759700",
+   "why": "colour wheel: producer read of setting 947 at 0x6097a2f4 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a318",
+   "expect": "eb0496ff",
+   "new": "e9749700",
+   "why": "colour wheel: producer read of setting 949 at 0x6097a317 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a325",
+   "expect": "de0496ff",
+   "new": "dc749700",
+   "why": "colour wheel: producer read of setting 950 at 0x6097a324 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a332",
+   "expect": "d10496ff",
+   "new": "cf749700",
+   "why": "colour wheel: producer read of setting 951 at 0x6097a331 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a33f",
+   "expect": "c40496ff",
+   "new": "c2749700",
+   "why": "colour wheel: producer read of setting 952 at 0x6097a33e -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a34c",
+   "expect": "b70496ff",
+   "new": "b5749700",
+   "why": "colour wheel: producer read of setting 953 at 0x6097a34b -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a359",
+   "expect": "aa0496ff",
+   "new": "a8749700",
+   "why": "colour wheel: producer read of setting 954 at 0x6097a358 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a366",
+   "expect": "9d0496ff",
+   "new": "9b749700",
+   "why": "colour wheel: producer read of setting 955 at 0x6097a365 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a373",
+   "expect": "900496ff",
+   "new": "8e749700",
+   "why": "colour wheel: producer read of setting 956 at 0x6097a372 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a380",
+   "expect": "830496ff",
+   "new": "81749700",
+   "why": "colour wheel: producer read of setting 957 at 0x6097a37f -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a38d",
+   "expect": "760496ff",
+   "new": "74749700",
+   "why": "colour wheel: producer read of setting 958 at 0x6097a38c -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a39a",
+   "expect": "690496ff",
+   "new": "67749700",
+   "why": "colour wheel: producer read of setting 959 at 0x6097a399 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a3bd",
+   "expect": "460496ff",
+   "new": "44749700",
+   "why": "colour wheel: producer read of setting 925 at 0x6097a3bc -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a3ca",
+   "expect": "390496ff",
+   "new": "37749700",
+   "why": "colour wheel: producer read of setting 926 at 0x6097a3c9 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a3d7",
+   "expect": "2c0496ff",
+   "new": "2a749700",
+   "why": "colour wheel: producer read of setting 927 at 0x6097a3d6 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a3e4",
+   "expect": "1f0496ff",
+   "new": "1d749700",
+   "why": "colour wheel: producer read of setting 928 at 0x6097a3e3 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a3f1",
+   "expect": "120496ff",
+   "new": "10749700",
+   "why": "colour wheel: producer read of setting 929 at 0x6097a3f0 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a3fe",
+   "expect": "050496ff",
+   "new": "03749700",
+   "why": "colour wheel: producer read of setting 930 at 0x6097a3fd -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a40b",
+   "expect": "f80396ff",
+   "new": "f6739700",
+   "why": "colour wheel: producer read of setting 931 at 0x6097a40a -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a418",
+   "expect": "eb0396ff",
+   "new": "e9739700",
+   "why": "colour wheel: producer read of setting 932 at 0x6097a417 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a425",
+   "expect": "de0396ff",
+   "new": "dc739700",
+   "why": "colour wheel: producer read of setting 933 at 0x6097a424 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a432",
+   "expect": "d10396ff",
+   "new": "cf739700",
+   "why": "colour wheel: producer read of setting 934 at 0x6097a431 -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a43f",
+   "expect": "c40396ff",
+   "new": "c2739700",
+   "why": "colour wheel: producer read of setting 935 at 0x6097a43e -> cw_get"
+  },
+  {
+   "kind": "0x100",
+   "addr": "0x6097a44c",
+   "expect": "b70396ff",
+   "new": "b5739700",
+   "why": "colour wheel: producer read of setting 936 at 0x6097a44b -> cw_get"
+  }
+ ]
+}

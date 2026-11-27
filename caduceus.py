@@ -8,10 +8,10 @@ applies a release's edit list (releases/.../edits.json) and writes the update
 files for your SD card. Every output hash must match the release's SHA256SUMS
 exactly, otherwise nothing is written.
 
-  python3 caduceus.py build --release v0.29a [--camera ep7] [--out DIR] [--stock FILE]
-  python3 caduceus.py build --camera em1mk2 --release v0.1 [--out DIR] [--stock FILE]
+  python3 caduceus.py [--release VERSION] [--sd CARD]
+  python3 caduceus.py build --release v0.4c24 [--out DIR] [--stock FILE]
   python3 caduceus.py verify DIR
-  python3 caduceus.py list [--camera CAM]
+  python3 caduceus.py list
 
 Python 3.10+, standard library only. Never talks to a camera.
 
@@ -22,6 +22,7 @@ mx3 in CHDK forum thread 2471.
 import re, argparse
 from dataclasses import dataclass, replace
 import hashlib
+import html
 import json
 import os
 import shutil
@@ -37,8 +38,14 @@ import xml.etree.ElementTree as ET
 from array import array
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-RELEASES = ROOT / 'releases'
+FROZEN = getattr(sys, 'frozen', False)
+DATA_ROOT = Path(sys._MEIPASS) if FROZEN else Path(__file__).resolve().parent
+APP_ROOT = Path(sys.executable).resolve().parent if FROZEN else DATA_ROOT
+RELEASES = DATA_ROOT / 'releases'
+INSTALL_CAMERA = 'em1mk2'
+RECOMMENDED_RELEASE = 'v0.4c24'
+INSTALL_GUIDE = ('https://github.com/xtruong88/caduceus-em1ii/blob/main/'
+                 'docs/huong-dan-firmware-em1-ii.md')
 CATALOG = 'https://fw01.om-digitalsolutions.net/ww_inform/fcache.do'
 EM1MK2_CATALOG_STOCK_SHA = '691a8a8e90af75b3848b70856a3a49ef24d72394cdfd2766fa37bdfe6325de70'
 
@@ -276,7 +283,7 @@ def apply_edits(spec, stock, camera: Optional[Camera] = None):
 
 
 # ---------------------------------------------------------------- download
-def fetch_stock(camera: Optional[Camera] = None):
+def fetch_stock(camera: Optional[Camera] = None, *, accept_license: bool = False):
     cam = camera or DEFAULT_CAM
     t = time.strftime('%Y%m%d%H%M%S', time.gmtime())
     req = (f"<?xml version='1.0' encoding='utf-8'?><firmware_demand><revision>0001</revision>"
@@ -289,11 +296,28 @@ def fetch_stock(camera: Optional[Camera] = None):
     print(f'Asking OM Digital Solutions for {cam.name} {cam.version} firmware ...')
     try:
         with urllib.request.urlopen(urllib.request.Request(CATALOG, req.encode(), hdrs), timeout=60) as r:
-            info = ET.fromstring(r.read()).find('.//firmware_info')
+            catalog = ET.fromstring(r.read())
+        info = catalog.find('.//firmware_info')
         if info is None or info.findtext('model_id') != cam.model_id:
             raise Refuse(f'OM server did not offer {cam.name} firmware {cam.version} (it may have moved). '
                          f'Download {cam.stock_name} yourself and use --stock FILE.')
         url = info.findtext('url')
+        if not url or not url.startswith(('https://', 'http://')):
+            raise Refuse('OM did not provide a firmware download URL. Use --stock FILE with a local copy.')
+        license_text = catalog.findtext('.//license_agreement', '').strip()
+        if not license_text:
+            raise Refuse('OM did not provide its firmware license. Use --stock FILE with a local copy.')
+        print('\nOM Digital Solutions firmware license\n')
+        print(html.unescape(license_text).replace(r'\n', '\n'))
+        if not accept_license:
+            if not (sys.stdin and sys.stdin.isatty()):
+                raise Refuse('review the OM license above and use --accept-license to confirm acceptance.')
+            try:
+                answer = input('\nType yes to accept the OM license and download: ').strip().lower()
+            except EOFError:
+                answer = ''
+            if answer != 'yes':
+                raise Refuse('OM license declined. No firmware was downloaded.')
         print(f'Downloading {cam.stock_name} from {url.split("/")[2]}')
         buf = bytearray()
         with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Olympus'}),
@@ -305,7 +329,7 @@ def fetch_stock(camera: Optional[Camera] = None):
         return bytes(buf)
     except (OSError, ET.ParseError) as e:
         raise Refuse(f'download failed: {e}\nIf this keeps happening, download {cam.stock_name} '
-                     'another way and pass --stock FILE (see docs/INSTALL.md).')
+                     f'another way and pass --stock FILE. See {INSTALL_GUIDE}.')
 
 
 # ---------------------------------------------------------------- releases
@@ -369,7 +393,7 @@ def releases(camera_id: Optional[str] = None):
 
     # Also check body folders (e.g. em1mk2/releases/v0.1)
     for cam_id in CAMERAS:
-        cam_rel = ROOT / cam_id / 'releases'
+        cam_rel = DATA_ROOT / cam_id / 'releases'
         if cam_rel.is_dir():
             for d in sorted(cam_rel.iterdir()):
                 res = _release_entry(d)
@@ -384,13 +408,16 @@ def releases(camera_id: Optional[str] = None):
 
 def find_release_dir(name: str, camera_id: Optional[str] = None) -> Tuple[Path, Camera]:
     """Find release directory and determine its camera profile."""
+    prefix, separator, version = name.rpartition('/')
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', version) or (separator and prefix not in CAMERAS):
+        raise Refuse(f'invalid release name {name!r}. Choose a release shown by list.')
     # Direct path checks
     candidates = []
     if camera_id:
         c = get_camera(camera_id)
         candidates.extend([
             RELEASES / c.id / name,
-            ROOT / c.id / 'releases' / name,
+            DATA_ROOT / c.id / 'releases' / name,
             RELEASES / f"{c.id}-{name}",
             RELEASES / name,
         ])
@@ -401,7 +428,7 @@ def find_release_dir(name: str, camera_id: Optional[str] = None) -> Tuple[Path, 
             if cam_part in CAMERAS:
                 candidates.extend([
                     RELEASES / cam_part / rel_part,
-                    ROOT / cam_part / 'releases' / rel_part,
+                    DATA_ROOT / cam_part / 'releases' / rel_part,
                 ])
         candidates.extend([
             RELEASES / name,
@@ -409,20 +436,18 @@ def find_release_dir(name: str, camera_id: Optional[str] = None) -> Tuple[Path, 
         for c in CAMERAS.values():
             candidates.extend([
                 RELEASES / c.id / name,
-                ROOT / c.id / 'releases' / name,
+                DATA_ROOT / c.id / 'releases' / name,
                 RELEASES / f"{c.id}-{name}",
             ])
 
     for d in candidates:
         if d.is_dir() and (d / 'edits.json').is_file() and (d / 'SHA256SUMS').is_file():
             spec = json.loads((d / 'edits.json').read_text())
-            spec_cam = camera_id or spec.get('camera')
-            if not spec_cam:
-                if 'em1mk2' in str(d):
-                    spec_cam = 'em1mk2'
-                else:
-                    spec_cam = 'ep7'
-            return d, get_camera(spec_cam)
+            legacy_em1 = d.parent.name == 'em1mk2' or d.name.startswith('em1mk2-')
+            spec_cam = spec.get('camera') or ('em1mk2' if legacy_em1 else 'ep7')
+            cam = get_camera(spec_cam)
+            if camera_id is None or cam.id == get_camera(camera_id).id:
+                return d, cam
 
     avail = ', '.join(releases(camera_id)) or 'none'
     raise Refuse(f'unknown release {name!r}. Available: {avail}')
@@ -460,13 +485,13 @@ def find_stock(camera: Optional[Camera] = None):
     cam = camera or DEFAULT_CAM
     names = [cam.stock_name] + list(cam.alt_stock_names)
     search_dirs = [
-        ROOT,
-        ROOT / 'stock_firmware',
-        ROOT / 'stock_firmware' / cam.id,
-        ROOT / 'stock_firmware' / f"omd{cam.id}",
-        ROOT / cam.id / 'firmware',
-        ROOT / 'cache' / cam.stock_sha,
-        ROOT / 'cache',
+        APP_ROOT,
+        APP_ROOT / 'stock_firmware',
+        APP_ROOT / 'stock_firmware' / cam.id,
+        APP_ROOT / 'stock_firmware' / f"omd{cam.id}",
+        APP_ROOT / cam.id / 'firmware',
+        APP_ROOT / 'cache' / cam.stock_sha,
+        APP_ROOT / 'cache',
         Path.home() / 'Downloads',
     ]
     for d in search_dirs:
@@ -497,7 +522,7 @@ def cmd_build(a):
             print(f'Using local stock file for {cam.name}: {local_stock}')
             stock = local_stock.read_bytes()
         else:
-            stock = fetch_stock(cam)
+            stock = fetch_stock(cam, accept_license=getattr(a, 'accept_license', False))
 
     if sha(stock) != cam.stock_sha:
         raise Refuse(f'stock firmware SHA-256 is {sha(stock)}\nexpected {cam.stock_sha}\n'
@@ -638,6 +663,30 @@ def sd_cards(limit=10.0):
     return list(found)
 
 
+def card_path(value):
+    if os.name == 'nt' and re.fullmatch(r'[A-Za-z]:', value):
+        value += '\\'
+    card = Path(value).resolve()
+    if not (card / 'DCIM').is_dir():
+        raise Refuse(f'{card} has no DCIM folder. Select the root of an SD card used in your camera.')
+    return card
+
+
+def select_card():
+    cards = sd_cards()
+    if len(cards) <= 1:
+        return cards[0] if cards else None
+    if not (sys.stdin and sys.stdin.isatty()):
+        return None
+    for number, card in enumerate(cards, 1):
+        print(f'  {number}. {card}')
+    try:
+        selected = int(input('Choose an SD card number (Enter to skip): '))
+    except (EOFError, ValueError):
+        return None
+    return cards[selected - 1] if 1 <= selected <= len(cards) else None
+
+
 def ask(q, default=True):
     try:
         if not (sys.stdin and sys.stdin.isatty()):
@@ -660,17 +709,22 @@ def pause():
 
 
 def copy_synced(src, dst):
-    with open(src, 'rb') as i, open(dst, 'wb') as o:
-        shutil.copyfileobj(i, o, 1 << 20)
-        o.flush()
-        try:
+    with tempfile.TemporaryDirectory(prefix='.caduceus-', dir=dst.parent) as temporary:
+        pending = Path(temporary) / dst.name
+        with open(src, 'rb') as i, pending.open('wb') as o:
+            shutil.copyfileobj(i, o, 1 << 20)
+            o.flush()
             if sys.platform == 'darwin':
-                import fcntl
-                fcntl.fcntl(o.fileno(), fcntl.F_FULLFSYNC)
+                try:
+                    import fcntl
+                    fcntl.fcntl(o.fileno(), fcntl.F_FULLFSYNC)
+                except (OSError, AttributeError):
+                    os.fsync(o.fileno())
             else:
                 os.fsync(o.fileno())
-        except (OSError, ImportError, AttributeError):
-            pass
+        if sha(pending.read_bytes()) != sha(src.read_bytes()):
+            raise Refuse(f'copy check failed for {dst}. Do not flash.')
+        os.replace(pending, dst)
 
 
 def em1mk2_looks_ok(data: bytes) -> bool:
@@ -688,6 +742,7 @@ def em1mk2_looks_ok(data: bytes) -> bool:
 
 def copy_to_card(build, card, camera: Camera):
     """Copy the update and starter files, keeping the user's camera settings."""
+    card = card_path(str(card))
     dco = card / 'DCOLYMP'
     try:
         dco.mkdir(exist_ok=True)
@@ -699,11 +754,8 @@ def copy_to_card(build, card, camera: Camera):
     for old in dco.glob('*.BIN'):
         if old.name.upper() != camera.card_name.upper():
             print(f'  note: {old} is another update file; remove it before flashing.')
-    print('  copying the update (about 100 MB) ...')
-    copy_synced(build / 'DCOLYMP' / camera.card_name, dco / camera.card_name)
     mod = card / camera.mod_dir
     mod.mkdir(exist_ok=True)
-    check = [f'DCOLYMP/{camera.card_name}']
     looks = build / camera.mod_dir / 'LOOKS.BIN'
     if looks.is_file():
         card_looks = mod / 'LOOKS.BIN'
@@ -714,23 +766,17 @@ def copy_to_card(build, card, camera: Camera):
             if camera.id == 'em1mk2' and card_looks.exists():
                 print(f'  replaced {camera.mod_dir}/LOOKS.BIN: this firmware cannot read it (old format or damaged)')
             copy_synced(looks, card_looks)
-            check.append(f'{camera.mod_dir}/LOOKS.BIN')
-    if (build / camera.mod_dir / 'BUNDLES.BIN').exists():
-        if (mod / 'BUNDLES.BIN').exists():
-            print(f'  kept your existing {camera.mod_dir}/BUNDLES.BIN (your saved looks)')
-        else:
-            copy_synced(build / camera.mod_dir / 'BUNDLES.BIN', mod / 'BUNDLES.BIN')
-            check.append(f'{camera.mod_dir}/BUNDLES.BIN')
-    for name, what in (('MOVIE.BIN', 'Movie colour'), ('AP.BIN', 'AP Custom colour')):
+    extras = () if camera.id == 'em1mk2' else (
+        ('BUNDLES.BIN', 'looks'), ('MOVIE.BIN', 'Movie colour settings'), ('AP.BIN', 'AP Custom colour settings'),
+    )
+    for name, what in extras:
         if (build / camera.mod_dir / name).exists():
             if (mod / name).exists():
-                print(f'  kept your existing {camera.mod_dir}/{name} (your {what} settings)')
+                print(f'  kept your existing {camera.mod_dir}/{name} (your {what})')
             else:
                 copy_synced(build / camera.mod_dir / name, mod / name)
-                check.append(f'{camera.mod_dir}/{name}')
-    for rel in check:
-        if sha((card / rel).read_bytes()) != sha((build / rel).read_bytes()):
-            raise Refuse(f'copy check failed for {card / rel}; copy it again by hand. Do not flash.')
+    print('  copying the update (about 100 MB) ...')
+    copy_synced(build / 'DCOLYMP' / camera.card_name, dco / camera.card_name)
     print(f'  copied and checked on {card}')
 
 
@@ -747,37 +793,42 @@ def open_folder(p):
 
 
 def cmd_easy(a):
-    here = Path(__file__).resolve().parent
-    cam = get_camera(getattr(a, 'camera', None))
-    rel = latest_release(cam.id)
-    _, _, _, cam = load_release(rel, cam.id)
+    rel = getattr(a, 'release', None) or RECOMMENDED_RELEASE
+    _, sums, _, cam = load_release(rel, INSTALL_CAMERA)
+    card = card_path(a.sd) if getattr(a, 'sd', None) else None
     clean_rel = rel.split('/')[-1]
     print(f'Caduceus [{cam.name}] one-press build: {clean_rel}\n')
-    out = here / f'Caduceus-{cam.id}-{clean_rel}'
-    stock = find_stock(cam)
-    if stock is None:
-        data = fetch_stock(cam)
-        actual = sha(data)
-        if actual != cam.stock_sha:
-            raise Refuse(f'Downloaded stock firmware SHA-256 is {actual}; expected {cam.stock_sha}.')
-        stock = here / 'cache' / cam.stock_sha / cam.stock_name
-        stock.parent.mkdir(parents=True, exist_ok=True)
-        stock.write_bytes(data)
+    out = APP_ROOT / 'out' / f'{cam.id}-{clean_rel}'
+    expected = release_package_hashes(sums, cam)
+    expected.update({name[len('card/'):]: digest for name, digest in sums.items() if name.startswith('card/')})
+    if all((out / name).is_file() and sha((out / name).read_bytes()) == digest
+           for name, digest in expected.items()):
+        print(f'Using verified build at {out}')
     else:
-        print(f'Using the OM file already on this computer: {stock}')
-    cmd_build(argparse.Namespace(out=str(out), release=rel, camera=cam.id, stock=str(stock) if stock else None))
-    print('\nLooking for a camera SD card ...')
-    cards = sd_cards()
-    copied = False
-    if len(cards) == 1 and ask(f'Copy the update to the SD card at {cards[0]}?'):
+        stock = find_stock(cam)
+        if stock is None:
+            data = fetch_stock(cam, accept_license=getattr(a, 'accept_license', False))
+            actual = sha(data)
+            if actual != cam.stock_sha:
+                raise Refuse(f'Downloaded stock firmware SHA-256 is {actual}; expected {cam.stock_sha}.')
+            stock = APP_ROOT / 'cache' / cam.stock_sha / cam.stock_name
+            stock.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryDirectory(dir=stock.parent) as temporary:
+                pending = Path(temporary) / stock.name
+                pending.write_bytes(data)
+                os.replace(pending, stock)
+        cmd_build(argparse.Namespace(out=out, release=rel, camera=cam.id, stock=stock))
+    if card is None:
+        print('\nLooking for a camera SD card ...')
+        card = select_card()
+    if card is not None and ask(f'Copy the update to the SD card at {card}?', default=False):
         try:
-            copy_to_card(out, cards[0], cam)
-            copied = True
+            copy_to_card(out, card, cam)
         except (Refuse, OSError) as e:
-            print(f'\nCould not copy to the card: {e}\nCopy by hand, then eject.')
-    if copied:
+            raise Refuse(f'could not copy to the card: {e}\nDo not flash until the copy is complete. '
+                         f'The verified files are in {out}.') from e
         print('\nNow eject the card, put it in the camera, then: full battery, hold OK and switch on.\n'
-              'LED steady = writing, ~2 Hz blink = done. See docs/INSTALL.md.')
+              f'LED steady = writing, ~2 Hz blink = done. See {INSTALL_GUIDE}.')
     else:
         print(f'\nCopy DCOLYMP and {cam.mod_dir} to the card, and keep restore/ on your computer.')
         open_folder(out)
@@ -787,20 +838,27 @@ def cmd_easy(a):
 def main(argv=None):
     if sys.version_info < (3, 10):
         sys.exit('Python 3.10 or newer is required.')
-    ap = argparse.ArgumentParser(prog='caduceus.py', description='Build Caduceus firmware files locally.')
-    ap.add_argument('--camera', help='camera model (ep7, em1mk2, em10iv)')
+    ap = argparse.ArgumentParser(prog='caduceus-build.exe' if FROZEN else 'caduceus.py',
+                                 description='Build Caduceus firmware files for the Olympus OM-D E-M1 Mark II.')
+    ap.add_argument('--camera', choices=[INSTALL_CAMERA], default=INSTALL_CAMERA)
+    ap.add_argument('--release', help=f'one-press release (default: {RECOMMENDED_RELEASE})')
+    ap.add_argument('--sd', help='one-press SD card root (for example E: or /Volumes/CAMERA)')
+    license_help = 'confirm acceptance of the OM firmware license for unattended downloads'
+    ap.add_argument('--accept-license', action='store_true', help=license_help)
     sub = ap.add_subparsers(dest='cmd')
     b = sub.add_parser('build', help='download stock, apply a release, write card files')
-    b.add_argument('--camera', help='camera model (ep7, em1mk2, em10iv)')
-    b.add_argument('--release', required=True, help='release name (e.g. v0.29a or em1mk2/v0.1)')
-    b.add_argument('--out', default='out', help='new or empty output directory (default: out)')
+    b.add_argument('--camera', choices=[INSTALL_CAMERA], default=INSTALL_CAMERA)
+    b.add_argument('--release', required=True, help='release name (for example v0.4c24)')
+    b.add_argument('--out', default=APP_ROOT / 'out' if FROZEN else 'out',
+                   help='new or empty output directory (default: out)')
     b.add_argument('--stock', help='use an already downloaded stock file instead of downloading')
+    b.add_argument('--accept-license', action='store_true', default=argparse.SUPPRESS, help=license_help)
     b.set_defaults(fn=cmd_build)
     v = sub.add_parser('verify', help='re-check a build directory')
     v.add_argument('dir')
     v.set_defaults(fn=cmd_verify)
     l = sub.add_parser('list', help='list available releases')
-    l.add_argument('--camera', help='filter releases by camera model')
+    l.add_argument('--camera', choices=[INSTALL_CAMERA], default=INSTALL_CAMERA)
     l.set_defaults(fn=cmd_list)
     a = ap.parse_args(argv)
     for f in (sys.stdout, sys.stderr):
@@ -813,7 +871,7 @@ def main(argv=None):
         a.fn = cmd_easy
     try:
         return a.fn(a)
-    except Refuse as e:
+    except (Refuse, OSError) as e:
         print(f'refused: {e}', file=sys.stderr)
         return 1
     except KeyboardInterrupt:

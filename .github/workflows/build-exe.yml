@@ -1,0 +1,128 @@
+name: Build E-M1 II installer
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    tags: ['em1mk2-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+
+      - name: Test the builder
+        run: python -m unittest tools/test_caduceus_releases.py
+
+      - name: Package the Python source
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $releaseFiles = git ls-files -- releases/em1mk2
+          $unexpected = $releaseFiles | Where-Object {
+            $_ -cnotmatch '^releases/em1mk2/[^/]+/(edits\.json|build\.json|SHA256SUMS|card/EM1MOD/LOOKS\.BIN)$'
+          }
+          if (!$releaseFiles -or $unexpected) {
+            throw "Unexpected E-M1 II release files: $unexpected"
+          }
+          $sourceFiles = @(
+            'caduceus.py', 'Build Caduceus (Windows).bat', 'Build Caduceus (Mac).command',
+            'build-caduceus-linux.sh', 'README.md', 'README.vi.md', 'LICENSE', 'NOTICE',
+            'docs/huong-dan-firmware-em1-ii.md', 'docs/huong-dan-firmware-em1-ii.html',
+            'docs/huong-dan-cap-nhat-firmware-om-workspace.md', 'docs/BODIES.md',
+            'docs/OMD-EM1-II/thu-may-halation.md', 'docs/OMD-EM1-II/thu-may-nho-look.md',
+            'docs/OMD-EM1-II/thu-may-look-wb.md', 'docs/OMD-EM1-II/thu-may-color-wheel.md'
+          )
+          New-Item -ItemType Directory -Path dist | Out-Null
+          git archive --format=zip --output=dist/caduceus-em1mk2-source.zip HEAD -- @sourceFiles @releaseFiles
+          Expand-Archive dist/caduceus-em1mk2-source.zip -DestinationPath package
+
+      - name: Build the Windows executable
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -m pip install pyinstaller==6.22.3
+          python -m PyInstaller --onefile --name caduceus-build --distpath app --workpath pyinstaller-work --specpath . --add-data "package/releases/em1mk2:releases/em1mk2" package/caduceus.py
+
+      - name: Verify the Python and executable builds
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $release = python -c "from caduceus import RECOMMENDED_RELEASE; print(RECOMMENDED_RELEASE)"
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -cne "em1mk2-$release") {
+            throw "The release tag must be em1mk2-$release"
+          }
+          $exe = (Resolve-Path app/caduceus-build.exe).Path
+          & $exe --help
+          $sourceReleases = python package/caduceus.py list
+          $exeReleases = & $exe list
+          if ($exeReleases -cnotcontains "em1mk2/$release" -or (Compare-Object $sourceReleases $exeReleases)) {
+            throw 'The executable release list differs from the source package.'
+          }
+          python package/caduceus.py build --release $release --accept-license --out out/python
+          python package/caduceus.py verify out/python
+          $stock = (Resolve-Path out/python/restore/E1259999.BIN).Path
+          Push-Location $env:RUNNER_TEMP
+          try {
+            & $exe build --release $release --stock $stock
+          } finally {
+            Pop-Location
+          }
+          & $exe verify app/out
+          $manifest = Get-Content "releases/em1mk2/$release/SHA256SUMS" |
+            Where-Object { $_ -cmatch '^[a-f0-9]{64}\s+E1259999\.BIN$' }
+          $expected = ($manifest -split '\s+')[0]
+          $pythonHash = (Get-FileHash out/python/DCOLYMP/E1259999.BIN).Hash
+          $exeHash = (Get-FileHash app/out/DCOLYMP/E1259999.BIN).Hash
+          if (!$expected -or $pythonHash -ne $expected -or $exeHash -ne $expected) {
+            throw "E1259999.BIN differs from the release manifest: Python=$pythonHash EXE=$exeHash"
+          }
+          Copy-Item $exe dist/caduceus-build.exe
+
+      - name: Write download checksums
+        run: |
+          $lines = foreach ($name in 'caduceus-build.exe', 'caduceus-em1mk2-source.zip') {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath "dist/$name").Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          Set-Content -LiteralPath dist/SHA256SUMS -Value $lines -Encoding ascii
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: caduceus-em1mk2-installer
+          path: |
+            dist/caduceus-build.exe
+            dist/caduceus-em1mk2-source.zip
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+  publish:
+    if: github.repository == 'xtruong88/caduceus-em1ii' && github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: caduceus-em1mk2-installer
+          path: dist
+      - name: Publish the tested installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd dist && sha256sum -c SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" --verify-tag --prerelease \
+            --title "$GITHUB_REF_NAME" --notes-file "docs/releases/$GITHUB_REF_NAME.md" \
+            dist/caduceus-build.exe dist/caduceus-em1mk2-source.zip dist/SHA256SUMS

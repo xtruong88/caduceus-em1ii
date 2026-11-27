@@ -5,6 +5,39 @@ Container update package: `E1259999.BIN` (93,050,944 bytes) installed via `DCOLY
 
 ---
 
+## v0.4c27t — 2026-11-27 (colour wheel camera-test build; emulator-checked, not camera-tested)
+
+- v0.4c26t (look memory + look WB) plus one feature: **a Color Creator Wheel page** right after Film draws the active
+  look's S, H or L on the camera's own 12-sector colour wheel (the dormant C3d kind 5 polygon). Display only: no setting
+  and no capture changes.
+- Pages: Film 0 → Wheel 1 → Chroma 2 → Luminance 3 → Strength 4 → Halo 5. On Wheel, **Down** or **TRASH** steps the
+  axis S → H → L → S (TRASH as Delete on the E-P7 / PEN-F wheel, Down as on the E-M10 I); Up, Left, Right and both dials
+  do nothing. TRASH on the other pages still steps the page.
+- Surface switching through the fwOpe API object (0x6082602c, as the stock GUI gets it): entering Wheel = stop type 0 →
+  start type 4 → draw; Down/TRASH = draw only; leaving (INFO, OK, MENU and other events) = stop type 4 → start type 0 →
+  draw, then the stock handler. On record+36 events other than OK (MENU, 0x900d, 0x903e, 0x972b and the stock default)
+  the children and view are refreshed as on a page step, so the screen shows Film. A start always follows the stop of
+  the open surface (a second open hangs the C3d API task). Opening the editor clears the wheel flag (P_WON).
+- Code: `patches/omdem1mk2/color_wheel` (`cw_get`, 186 B at 0x612f1800, plus the producer's getter calls) feeds the
+  look's values while the wheel is up; `color_creator_wheel` built with `EM1_CC_HALO=1 EM1_LOOKMEM=1 EM1_CC_WHEEL=1`:
+  1636 B cave, OK hook at record+40, Wheel page code and the moved SCP page tables in `.cwui` (632 B at 0x612f1900).
+  `cw_get` keeps d1 / a0 / a1 as at entry on both its paths (16-byte frame with p_get's call slot at (0,sp)).
+  Builds without `EM1_CC_WHEEL` are byte-identical to before.
+- Emulator: every v0.4c26t check (Halo is checked at its new page inside `emu_color_wheel_page` instead of
+  `emu_halo_page`), plus `emu_color_wheel_probe` (stock producer → builder → renderer → C3d task, stop-before-start),
+  `emu_color_wheel_feed` on the sealed spec (S/H/L values, profile, cursor from the look; cw_get called directly with
+  sentinel registers on the override and pass-through paths) and `emu_color_wheel_page` (INFO cycle, Down and TRASH
+  axis cycle, no-op keys and dial detents, OK/MENU exits from S/H/L, other record+36 events with the view refresh,
+  re-entry, d1 = 2 with the GUI flag, other pages identical to v0.4c26t).
+- Not emulated: the full fwOpe → C3d chain from the page handlers in one run (fwOpe slots are logging stubs in the page
+  harness), screen output (where the polygon appears, OSD overlap, the ring coming back, EVF centring), half-press and
+  power-off exits from Wheel (no hook; they rely on the GUI's own stop and the reset on re-entry), the real dial loop
+  (modelled as its per-detent calls with P_DIAL = 1), the ×9 radius scale on the camera and how the hue-ring bitmap 210
+  lines up with sector 0. Camera test: `docs/OMD-EM1-II/thu-may-color-wheel.md`.
+- Seal: `tools/omdem1mk2_catalog_release.py --version v0.4c27t`, 25 checks, all pass (`emu_halation_route` passes with
+  the seal's `--stage-setting`). `E1259999.BIN` SHA-256 `a525ef54…`, `edits.json` `11a924b3…`. Built and verified with
+  `caduceus.py build` / `verify` (WSL Python) from the catalog stock file. v0.4c24 / v0.4c25t / v0.4c26t are unchanged.
+
 ## v0.4c26t — 2026-11-27 (look WB camera-test build; emulator-checked, not camera-tested)
 
 - v0.4c25t plus one feature: **a colour look's WB shift is applied.** Its record's `a_b` / `g_m` (−7..7, flag +25)
