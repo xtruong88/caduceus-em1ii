@@ -14,16 +14,11 @@ every body.
 **Public beta: testers wanted.** Three builds are ready, each adding one feature to the one before; none has run
 on a camera yet. **[Become a tester](#become-a-tester)** · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** ·
 **[Port notes](docs/PORT_EM1MK2.md)** ·
-Vietnamese guides: [what it does, backup, install, every feature, restore (HTML)](docs/huong-dan-firmware-em1-ii.html),
+Vietnamese guides: what it does, backup, install, every feature, restore ([Markdown](docs/huong-dan-firmware-em1-ii.md) ·
+[HTML](docs/huong-dan-firmware-em1-ii.html)) ·
 [official 3.7 update with OM Workspace](docs/huong-dan-cap-nhat-firmware-om-workspace.md)
 
-> [!WARNING]
-> **Experimental, use at your own risk.** This is unofficial, in-development firmware modification for one
-> camera model. Flashing modified firmware can crash, freeze or brick your camera, corrupt photos or damage your
-> SD card's data. **No responsibility is accepted for any damage, data loss or other harm.** It is provided
-> "as is", without warranty of any kind (see the [Apache License 2.0](LICENSE), sections 7–8). Using it may
-> affect your warranty with OM Digital Solutions. Read [Safety](#safety) before flashing.
->
+> [!IMPORTANT]
 > **Only for the E-M1 Mark II on firmware 3.7.** Never flash an E-P7, OM-3 or other body's build on it, and
 > never flash this build on any other camera.
 

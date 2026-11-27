@@ -14,16 +14,11 @@ mọi máy.
 **Bản thử công khai: cần người thử.** Có ba bản đã sẵn sàng, mỗi bản thêm một tính năng so với bản trước; chưa bản nào
 chạy trên máy thật. **[Tham gia thử](#tham-gia-thử)** · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** (tiếng Anh) ·
 **[Ghi chú port](docs/PORT_EM1MK2.md)** (tiếng Anh) ·
-Hướng dẫn chi tiết: [tính năng, sao lưu, cài, dùng từng tính năng, khôi phục (HTML)](docs/huong-dan-firmware-em1-ii.html),
+Hướng dẫn chi tiết (tính năng, sao lưu, cài, dùng từng tính năng, khôi phục): [đọc trên GitHub (Markdown)](docs/huong-dan-firmware-em1-ii.md) ·
+[bản HTML](docs/huong-dan-firmware-em1-ii.html) ·
 [cập nhật firmware gốc 3.7 bằng OM Workspace](docs/huong-dan-cap-nhat-firmware-om-workspace.md)
 
-> [!WARNING]
-> **Đang thử nghiệm, tự chịu rủi ro.** Đây là bản sửa firmware không chính thức, đang phát triển, cho một mẫu máy.
-> Nạp firmware đã sửa có thể làm máy lỗi, treo hoặc hỏng hẳn, làm hỏng ảnh hoặc dữ liệu trên thẻ SD. **Không ai chịu
-> trách nhiệm cho bất kỳ hư hỏng, mất dữ liệu hay thiệt hại nào.** Phần mềm được cung cấp "nguyên trạng", không bảo
-> hành dưới bất kỳ hình thức nào (xem [Apache License 2.0](LICENSE), mục 7–8). Việc dùng có thể ảnh hưởng tới bảo hành
-> của OM Digital Solutions. Đọc mục [An toàn](#an-toàn) trước khi nạp.
->
+> [!IMPORTANT]
 > **Chỉ dành cho E-M1 Mark II firmware 3.7.** Không bao giờ nạp bản của E-P7, OM-3 hay máy khác vào máy này, và không
 > nạp bản này vào máy khác.
 
