@@ -4,28 +4,71 @@
 
 ## Cài nhanh
 
-Dùng **Olympus OM-D E-M1 Mark II đang chạy firmware gốc 3.7**. Sạc đầy pin, sao lưu cài đặt máy và dữ liệu trên
-thẻ trước khi bắt đầu. [Hướng dẫn sao lưu và cài đặt](docs/huong-dan-firmware-em1-ii.md#sao-luu)
+> [!WARNING]
+> **v0.4c24 là bản thử cho Olympus OM-D E-M1 Mark II firmware 3.7.** Bản này đã kiểm trên giả lập và đang chờ
+> xác nhận trên máy thật. Nạp firmware sửa đổi có thể làm máy treo hoặc không khởi động được.
 
-1. Tải `caduceus-build.exe` cho Windows 64 bit hoặc `caduceus-em1mk2-source.zip` để dùng launcher Python.
+### 1. Kiểm tra máy và sao lưu
+
+1. Vào **MENU → Setup** (biểu tượng cờ lê) **→ Firmware** và kiểm tra dòng **Body** là **3.7**. Nếu thấp hơn,
+   cập nhật lên 3.7 chính hãng trước. [Hướng dẫn cập nhật bằng OM Workspace](docs/huong-dan-cap-nhat-firmware-om-workspace.md)
+2. Sạc đầy pin và chuẩn bị thẻ SD mà máy đã đọc được. Tắt máy, rút thẻ, kết nối máy với OM Workspace qua USB
+   ở chế độ **Storage**. Vào **Camera → Custom Settings → Save** để lưu cài đặt ra máy tính. Ghi lại những mục
+   quan trọng như C1/C2/C3, nút tuỳ chỉnh và AF.
+3. Chép ảnh, video và thư mục `EM1MOD/` (nếu có) từ thẻ sang máy tính. Mở thử vài tệp để kiểm tra bản sao
+   trước khi định dạng thẻ hoặc chép gói cài. [Hướng dẫn sao lưu chi tiết](docs/huong-dan-firmware-em1-ii.md#sao-luu)
+
+### 2. Tải bộ cài và dựng gói
+
+1. Trên Windows 64 bit, tải `caduceus-build.exe`, đặt vào thư mục bạn có quyền ghi rồi nhấp đúp. EXE chạy
+   không cần Python. EXE chưa ký nên Windows SmartScreen có thể hiện cảnh báo. Bạn có thể dùng
+   `caduceus-em1mk2-source.zip`. Đối chiếu SHA-256 của EXE hoặc ZIP với `SHA256SUMS` trên trang phát hành.
    [Tải bản em1mk2-v0.4c24](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24)
-2. Đặt EXE trong thư mục bạn có quyền ghi rồi nhấp đúp. Nếu dùng ZIP, cài Python 3.10 trở lên, giải nén toàn bộ
-   rồi nhấp đúp `Build Caduceus (Windows).bat` hoặc `Build Caduceus (Mac).command`. Trên Linux, chạy
-   `build-caduceus-linux.sh` trong Terminal.
-3. Khi tải lần đầu, đọc giấy phép OM Digital Solutions trong cửa sổ chạy và gõ `yes` nếu đồng ý. Builder kiểm
-   tệp 3.7 gốc và tạo gói v0.4c24 trong `out/em1mk2-v0.4c24/` cạnh chương trình.
-4. Cắm thẻ SD, đối chiếu đúng ổ rồi xác nhận chép. Thẻ phải có thư mục `DCIM`. Nếu chương trình không thấy thẻ,
-   bạn có thể chép bằng tay. [Hướng dẫn chép thẻ](docs/huong-dan-firmware-em1-ii.md#chep-the)
-5. Eject thẻ, lắp vào **khe 1** khi máy tắt, giữ **OK** rồi bật máy. Đợi đèn từ sáng liên tục chuyển sang nhấp nháy
-   đều khoảng hai lần mỗi giây. Xem bước nạp thử 3.7 gốc trước khi cài và cách khôi phục sau này.
-   [Hướng dẫn nạp và khôi phục](docs/huong-dan-firmware-em1-ii.md#nap)
+2. Nếu dùng ZIP, cài Python 3.10 trở lên, giải nén toàn bộ rồi nhấp đúp `Build Caduceus (Windows).bat` hoặc
+   `Build Caduceus (Mac).command`. Trên Linux, chạy `build-caduceus-linux.sh` trong Terminal.
+3. Khi tải firmware lần đầu, cần kết nối Internet. Đọc giấy phép OM Digital Solutions trong cửa sổ chạy
+   và gõ `yes` nếu đồng ý. Chương trình kiểm SHA-256 của firmware gốc rồi tạo gói mặc định **v0.4c24** tại
+   `out/em1mk2-v0.4c24/` cạnh chương trình.
 
-EXE chưa ký nên Windows SmartScreen có thể hiện cảnh báo. Bạn có thể dùng ZIP và launcher Python. Đối chiếu
-SHA-256 của tệp vừa tải với `SHA256SUMS` trên trang phát hành.
+| Tệp trong gói | Dùng để |
+|---|---|
+| `DCOLYMP/E1259999.BIN` | Nạp Caduceus v0.4c24. |
+| `EM1MOD/LOOKS.BIN` | Chép lên thẻ nếu muốn dùng bộ look đi kèm. |
+| `restore/E1259999.BIN` | Nạp lại firmware OM 3.7. Giữ một bản trên máy tính trước khi nạp. |
+
+Hai tệp firmware cùng tên `E1259999.BIN`. Kiểm tra **thư mục nguồn** để chắc mình chép đúng bản muốn nạp.
+
+### 3. Chép thẻ và nạp firmware
+
+Lần đầu, nên nạp thử firmware gốc 3.7 để kiểm tra thẻ và đường khôi phục. Bỏ qua bước chép tự động khi
+chương trình hỏi, chép `restore/E1259999.BIN` lên thẻ thành `DCOLYMP/E1259999.BIN` rồi thực hiện các bước
+2–4 dưới đây. Khởi động máy và chụp thử trước khi tiếp tục nạp v0.4c24.
+[Hướng dẫn nạp thử bản gốc](docs/huong-dan-firmware-em1-ii.md#nap)
+
+1. Cắm thẻ có thư mục `DCIM`, kiểm tra chương trình chọn đúng ổ rồi xác nhận chép. Bạn cũng có thể tự chép
+   `DCOLYMP/E1259999.BIN` từ gói lên thẻ.
+   [Hướng dẫn chép thẻ và đối chiếu hash](docs/huong-dan-firmware-em1-ii.md#chep-the)
+2. Kiểm tra thư mục `DCOLYMP/` ở gốc thẻ chỉ có đúng tệp cập nhật cần nạp rồi eject thẻ khỏi máy tính.
+   Khi máy ảnh đang **OFF**, lắp pin đầy và cho thẻ vào **khe 1**. Giữ nút **OK** trong lúc gạt sang **ON**.
+3. Khi **đèn sáng liên tục**, máy đang đọc và ghi firmware. **Giữ nguyên nguồn và thẻ.** Không tắt máy,
+   mở nắp pin hoặc rút thẻ. Chờ đèn chuyển sang **nhấp nháy đều khoảng hai lần mỗi giây**.
+4. Khi đã xong, tắt máy, lấy thẻ ra và xoá `DCOLYMP/E1259999.BIN` trên thẻ. Giữ thư mục `EM1MOD/` nếu đã
+   chép look. Lắp lại thẻ, bật máy bình thường, chụp thử và xem lại ảnh.
+   [Các mục cần kiểm tra sau khi nạp](docs/huong-dan-firmware-em1-ii.md#kiem-tra)
+
+Nếu đèn nháy nhanh ngay từ đầu hoặc khác trình tự trên, xem mục xử lý lỗi. Khi chưa rõ máy còn ghi hay không,
+giữ nguyên nguồn và thẻ. [Xử lý lỗi khi nạp](docs/huong-dan-firmware-em1-ii.md#loi)
+
+### 4. Khôi phục firmware gốc và cài đặt
+
+Chép `restore/E1259999.BIN` từ gói lên thẻ thành `DCOLYMP/E1259999.BIN`, thay tệp cập nhật đang có.
+Lặp lại quy trình nạp ở mục 3. Sau khi máy khởi động bình thường, kiểm tra **Body 3.7** rồi dùng
+**OM Workspace → Camera → Custom Settings → Load → Load from File** để nạp lại cài đặt đã lưu.
+[Hướng dẫn khôi phục chi tiết](docs/huong-dan-firmware-em1-ii.md#khoi-phuc)
 
 | Bản | Cách chọn |
 |---|---|
-| **v0.4c24** | Bản mặc định nên dùng. Halo mặc định Off. Đã kiểm trên giả lập, đang chờ thử trên máy thật. |
+| **v0.4c24** | Bản mặc định nên dùng. Halo mặc định Off. |
 | v0.4c25t / v0.4c26t / v0.4c27t | Bản thử, chỉ chọn bằng `--release`. |
 
 **Caduceus cho E-M1 II** là bản port của [Caduceus](https://github.com/cakelesscoder/caduceus-ep7) (bộ patch firmware
