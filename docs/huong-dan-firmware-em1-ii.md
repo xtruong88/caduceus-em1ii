@@ -1,7 +1,6 @@
 # Hướng dẫn Caduceus cho E-M1 Mark II
 
-Olympus OM-D E-M1 Mark II · nền firmware chính hãng 3.7 (build 3700) · bản nên dùng: **v0.4c24** · bản thử: **v0.4c25t** (nhớ look),
-**v0.4c26t** (WB theo look), **v0.4c27t** (vòng màu).
+Olympus OM-D E-M1 Mark II · nền firmware chính hãng 3.7 (build 3700) · bản cần thử: **v0.4c17** · **đừng nạp v0.4c24, v0.4c25t, v0.4c26t, v0.4c27t** (làm máy lặp khởi động).
 Trang này dành cho người mới: Caduceus là gì, cách sao lưu, cách nạp, cách dùng từng tính năng trên máy và cách quay về
 firmware gốc.
 
@@ -29,17 +28,14 @@ Máy nạp tệp như một bản cập nhật bình thường, qua thẻ SD, b�
 > **Rủi ro.** Nạp firmware sửa đổi có thể làm máy treo, mất dữ liệu hoặc không khởi động được. Bạn tự chịu trách nhiệm.
 > Chỉ dùng cho **E-M1 Mark II nền 3.7**. Không nạp bản của E-P7, OM-3 hay máy khác.
 
+> [!CAUTION]
+> **Đừng nạp v0.4c24, v0.4c25t, v0.4c26t hay v0.4c27t.** Các bản này làm một máy E-M1 II **lặp khởi động** (màn hình
+> lên, cửa trập kêu rồi tắt). Nạp tệp khôi phục là máy chạy lại ([mục 10](#khoi-phuc)).
+
 > [!NOTE]
-> **Mức độ đã kiểm chứng.** v0.4c13 và v0.4c15 đã chạy trên máy thật: tỷ lệ 65:24 / 21:9, AF, look từ thẻ. v0.4c24 đã
-> qua 21 bước kiểm tra trên trình giả lập CPU của máy:
->
-> - đóng gói lại từ tệp gốc khớp từng byte, và tệp khôi phục giống hệt tệp OM;
-> - vùng nhớ mới không xung đột với firmware gốc;
-> - ở Halo Off, việc chụp ảnh đi đúng đường của firmware gốc.
->
-> v0.4c24 **chưa được nạp vào máy thật**. Ba bản thử v0.4c25t (thêm nhớ look), v0.4c26t (thêm WB theo look) và v0.4c27t
-> (thêm vòng màu) cũng đã qua mọi bước kiểm của bản trước cộng phần kiểm riêng, và cũng chưa nạp vào máy thật. Hãy làm
-> đúng các bước sao lưu bên dưới.
+> **Mức độ đã kiểm chứng.** v0.4c13 và v0.4c15 đã chạy trên máy thật: tỷ lệ 65:24 / 21:9, AF, look từ thẻ, nhưng dựng
+> trên tệp 3.7 cũ OM không còn phát hành. **v0.4c17** là bản đang cần thử: cùng tính năng, dựng trên tệp 3.7 OM đang
+> phát hành, đã qua kiểm tra trên giả lập nhưng **chưa nạp vào máy thật**. Hãy làm đúng các bước sao lưu bên dưới.
 
 <a id="tinh-nang"></a>
 
@@ -54,12 +50,12 @@ Nhãn: ✅ đã chạy trên máy · 🧪 kiểm trên giả lập · ⏳ chưa 
 | Look phim trong Color Creator | 16 look có sẵn (Provia … Acros), màu theo 12 vùng sắc độ, tone sáng/trung/tối, chỉnh Chroma, Highlights/Shadows, cường độ x1–x3. | ✅ v0.3b5 |
 | Look từ thẻ | Đọc tối đa 32 look trong `EM1MOD/LOOKS.BIN` (cùng định dạng E-P7, tạo bằng Control Panel). | ✅ v0.4c15: nạp được · tên/màu từ thẻ ⏳ chưa xác nhận |
 | Tỷ lệ 65:24 và 21:9 | Ảnh toàn cảnh 5184×1920 và 5184×2224, có trong Shooting Menu, Super Control Panel, chọn điểm AF. | ✅ v0.4c13 |
-| Halation (quầng sáng) | Quầng màu quanh điểm sáng trên ảnh JPEG màu; chỉnh Off/Low/Med/High ở trang Halo. | 🧪 v0.4c24 · ⏳ chưa thử trên máy |
-| Watchdog 30 s | Máy chờ 30 s thay vì 10 s trước khi tự khởi động lại, để ảnh có quầng kịp lưu. | 🧪 v0.4c22t+ |
-| Nhớ look | Look đã chọn trong Color Creator được giữ sau khi tắt máy và tự áp lại ở lần nhấn nửa cò đầu. | 🧪 bản thử v0.4c25t · ⏳ chưa thử trên máy |
-| WB theo look | Look màu áp WB shift (A-B, G-M) của riêng nó thay cho fine-tune WB của bạn; CWB và các mode khác giữ nguyên. | 🧪 bản thử v0.4c26t · ⏳ chưa thử trên máy |
-| Vòng màu | Trang Wheel trong Color Creator vẽ look lên vòng màu 12 ô; nút xuống hoặc TRASH đổi trục S / H / L. Chỉ hiển thị. | 🧪 bản thử v0.4c27t · ⏳ chưa thử trên máy |
-| Sharpness tuyến tính | −2..+2 thành tắt / 25 / 50 / 75 / 100 %. Chỉ có trong bản thử riêng `v0.4c19t`, không có trong v0.4c24. | 🧪 bản thử |
+| Halation (quầng sáng) | Quầng màu quanh điểm sáng trên ảnh JPEG màu; chỉnh Off/Low/Med/High ở trang Halo. | ⛔ v0.4c24: lặp khởi động, đừng nạp |
+| Watchdog 30 s | Máy chờ 30 s thay vì 10 s trước khi tự khởi động lại, để ảnh có quầng kịp lưu. | ⛔ v0.4c22t+: chưa an toàn |
+| Nhớ look | Look đã chọn trong Color Creator được giữ sau khi tắt máy và tự áp lại ở lần nhấn nửa cò đầu. | ⛔ v0.4c25t: lặp khởi động, đừng nạp |
+| WB theo look | Look màu áp WB shift (A-B, G-M) của riêng nó thay cho fine-tune WB của bạn; CWB và các mode khác giữ nguyên. | ⛔ v0.4c26t: lặp khởi động, đừng nạp |
+| Vòng màu | Trang Wheel trong Color Creator vẽ look lên vòng màu 12 ô; nút xuống hoặc TRASH đổi trục S / H / L. Chỉ hiển thị. | ⛔ v0.4c27t: lặp khởi động, đừng nạp |
+| Sharpness tuyến tính | −2..+2 thành tắt / 25 / 50 / 75 / 100 %. Chỉ có trong bản thử riêng `v0.4c19t`, không có trong v0.4c17. | 🧪 bản thử |
 | Chưa có | B&W thật (look đơn sắc chỉ giảm độ bão hoà), Blacks/Whites, grain, tắt sharpening, NR theo look. | ⏳ chưa port |
 
 Phía máy tính, repo có:
@@ -109,11 +105,11 @@ máy bạn.
 
 ## 5. Tạo gói firmware trên máy tính
 
-1. Tải `caduceus-build.exe` cho Windows 64 bit hoặc `caduceus-em1mk2-source.zip`. [Trang tải v0.4c24](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24)
+1. Tải `caduceus-build.exe` cho Windows 64 bit hoặc `caduceus-em1mk2-source.zip`. [Trang tải v0.4c17](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c17)
 2. Đặt EXE trong thư mục có quyền ghi rồi nhấp đúp. Với ZIP, giải nén toàn bộ và nhấp đúp `Build Caduceus (Windows).bat`
    hoặc `Build Caduceus (Mac).command`. Trên Linux, chạy `build-caduceus-linux.sh` trong Terminal.
 3. Đọc giấy phép OM Digital Solutions và gõ `yes` nếu đồng ý. Sau khi tải tệp 3.7 gốc, builder kiểm hash rồi tạo gói
-   **v0.4c24** trong `out/em1mk2-v0.4c24/` cạnh chương trình. Nếu đã có tệp OM đúng hash, builder dùng tệp đó.
+   **v0.4c17** trong `out/em1mk2-v0.4c17/` cạnh chương trình. Nếu đã có tệp OM đúng hash, builder dùng tệp đó.
 
 SmartScreen có thể hiện cảnh báo vì EXE chưa ký. Bạn có thể dùng ZIP và launcher Python.
 
@@ -123,16 +119,16 @@ Mở PowerShell (Windows) hoặc Terminal (macOS/Linux) trong thư mục repo, n
 `python` bằng `python3` nếu cần.
 
 ```powershell
-python caduceus.py build --camera em1mk2 --release v0.4c24 --out out/em1mk2-v0.4c24
-python caduceus.py verify out/em1mk2-v0.4c24
+python caduceus.py build --camera em1mk2 --release v0.4c17 --out out/em1mk2-v0.4c17
+python caduceus.py verify out/em1mk2-v0.4c17
 ```
 
 - Lệnh `build` hỏi đồng ý giấy phép trước khi tải tệp 3.7 từ máy chủ OM. Nếu đã có tệp đúng hash, thêm
   `--stock "đường-dẫn\OLY_E_125_3700_0000_0000.BIN"`.
 - Thư mục `--out` phải mới hoặc trống.
-- Bản thử: thay `v0.4c24` bằng `v0.4c25t`, `v0.4c26t` hoặc `v0.4c27t` ở cả hai lệnh (và đổi tên thư mục `--out`). Chỉ nạp bản sau
-  khi bản trước đã chạy tốt.
-- Chỉ dùng gói khi `verify` báo **All good.** và có dòng khớp `releases/em1mk2/v0.4c24/SHA256SUMS`.
+- **Không** dựng v0.4c24, v0.4c25t, v0.4c26t, v0.4c27t: các bản này làm máy lặp khởi động.
+- Chỉ dùng gói khi `verify` báo **All good.** và có dòng khớp `releases/em1mk2/v0.4c17/SHA256SUMS`
+  (`E1259999.BIN` = `6da28f37d7e9ec25bdf660d4708d3f4ab6e5a29f445f50029b8e539d8eb97d54`).
 
 | Tệp | Đường dẫn | Dùng làm gì |
 |---|---|---|
@@ -170,7 +166,7 @@ Gốc thẻ SD/
 So hash trước khi rút thẻ. Trong PowerShell, thay `E:` bằng ổ thẻ của bạn; hai giá trị Hash phải giống nhau:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath 'E:\DCOLYMP\E1259999.BIN', '.\out\em1mk2-v0.4c24\DCOLYMP\E1259999.BIN'
+Get-FileHash -Algorithm SHA256 -LiteralPath 'E:\DCOLYMP\E1259999.BIN', '.\out\em1mk2-v0.4c17\DCOLYMP\E1259999.BIN'
 ```
 
 Sau đó Eject rồi rút thẻ.
@@ -190,7 +186,7 @@ Nếu đã dùng builder để chép thẻ, vẫn kiểm tra trong `DCOLYMP/` ch
 > - tệp 3.7 hiện tại của OM (`691a8a8e…`) chạy tốt;
 > - đường quay về đã sẵn sàng.
 >
-> Khởi động và chụp thử một ảnh, rồi mới nạp tệp cài Caduceus (v0.4c24) theo cùng các bước.
+> Khởi động và chụp thử một ảnh, rồi mới nạp tệp cài Caduceus (v0.4c17) theo cùng các bước.
 
 1. Để máy ở **OFF**. Lắp pin đầy, cho thẻ vào **khe 1**, đóng mọi nắp.
 2. Giữ <kbd>OK</kbd> trong khi gạt công tắc sang **ON**.
@@ -216,9 +212,9 @@ phần firmware chính; bốn phần còn lại, gồm cả chương trình cậ
 3. Picture Mode → **Color Creator**. Nhấn nửa cò một lần, rồi mở trình chỉnh Color Creator: dòng dưới cùng hiện tên look
    và mã trạng thái (xem [9.2](#ma-trang-thai)).
 4. Thử 65:24 hoặc 21:9, chọn điểm AF, chụp một ảnh (65:24 cho 5184×1920, 21:9 cho 5184×2224).
-5. Thử halation theo [9.5](#halation).
 
-Nếu một bước hỏng, xem [Xử lý lỗi](#loi). Có gì lạ với halation thì chỉ cần đặt Halo về Off, không phải nạp lại.
+Nếu một bước hỏng, xem [Xử lý lỗi](#loi). Máy lặp khởi động thì nạp tệp khôi phục ([mục 10](#khoi-phuc)) và báo lại
+khoảng thời gian từ lúc bật đến lúc tắt (1, 10 hay 30 giây).
 
 <a id="su-dung"></a>
 
@@ -398,16 +394,14 @@ thấy, gửi ảnh mẫu kèm thông số.
 
 <details><summary>Tôi có cần nạp lần lượt nhiều bản không?</summary>
 
-Không. Với người dùng, nạp **một lần v0.4c24** là đủ. Các bản thử từng bước (v0.4c17 → v0.4c22t → v0.4c23t) chỉ dùng khi
-cần tìm phần nào gây lỗi. Nếu muốn thử tính năng mới, đi lần lượt v0.4c24 → v0.4c25t → v0.4c26t → v0.4c27t, mỗi bản chỉ
-nạp khi bản trước đã chạy tốt.
+Không. Hiện chỉ nạp **một lần v0.4c17**. Đừng nạp v0.4c24 trở đi cho tới khi tìm ra lỗi lặp khởi động.
 
 </details>
 
 <details><summary>Firmware screen vẫn ghi 3.7, có phải chưa nạp?</summary>
 
 Bình thường: Caduceus giữ nguyên số phiên bản. Hãy kiểm tra bằng các tính năng: dòng trạng thái Color Creator, tỷ lệ
-65:24, trang Halo.
+65:24.
 
 </details>
 
@@ -417,11 +411,8 @@ Bình thường: Caduceus giữ nguyên số phiên bản. Hãy kiểm tra bằn
 
 | Bản | Dùng khi nào |
 |---|---|
-| **v0.4c24** | **Nên dùng.** Mọi tính năng ở mục 2 cộng halation, Halo mặc định Off. |
-| v0.4c25t | Bản thử: v0.4c24 cộng nhớ look. Nạp sau khi v0.4c24 chạy tốt. |
-| v0.4c26t | Bản thử: v0.4c25t cộng WB theo look. Nạp sau khi v0.4c25t chạy tốt. |
-| v0.4c27t | Bản thử: v0.4c26t cộng vòng màu (trang Wheel, chỉ hiển thị). Nạp sau khi v0.4c26t chạy tốt. |
-| v0.4c17 | Bản nền không có halation. Dùng để quay về nếu không muốn halation. |
+| **v0.4c17** | **Bản cần thử.** Look, 65:24 / 21:9, video 9 giờ, focus stacking, look từ thẻ. Không có halation. |
+| v0.4c24 / v0.4c25t / v0.4c26t / v0.4c27t | **Đừng nạp**: làm một máy lặp khởi động. |
 | v0.4c22t | Bản thử chẩn đoán: đi đường xử lý mới nhưng không vẽ quầng. Chỉ dùng khi tìm lỗi. |
 | v0.4c23t | Bản thử: quầng cố định ở mức Med. Chỉ dùng khi tìm lỗi. |
 | v0.4c19t | Bản thử Sharpness tuyến tính, không có halation. |
