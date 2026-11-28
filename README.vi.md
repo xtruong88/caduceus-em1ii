@@ -4,9 +4,15 @@
 
 ## Cài nhanh
 
-> [!WARNING]
-> **v0.4c24 là bản thử cho Olympus OM-D E-M1 Mark II firmware 3.7.** Bản này đã kiểm trên giả lập và đang chờ
-> xác nhận trên máy thật. Nạp firmware sửa đổi có thể làm máy treo hoặc không khởi động được.
+> [!CAUTION]
+> **Đừng nạp v0.4c24, v0.4c25t, v0.4c26t hay v0.4c27t.** Các bản này làm một máy E-M1 II **lặp khởi động**:
+> màn hình lên, cửa trập kêu rồi máy tắt. Nạp lại firmware gốc là máy chạy lại.
+> [Báo cáo chẩn đoán](plans/reports/debug-261128-0104-em1ii-c24-bootloop.md)
+
+**v0.4c17** là bản đang cần người thử: look / Color Creator, ảnh XPan 65:24 và 21:9, quay video 9 giờ, focus stacking
+và nạp look từ thẻ. Bản này **không có** halation, không đổi watchdog và không nạp thêm Section 6. Nó đã qua kiểm tra
+trên giả lập nhưng **chưa chạy trên máy thật** với firmware gốc 3.7 mà OM đang phát hành. Nạp firmware sửa đổi có thể
+làm máy treo hoặc không khởi động được. Kết quả của bạn cho biết lỗi của c24 nằm ở đâu.
 
 ### 1. Kiểm tra máy và sao lưu
 
@@ -18,38 +24,69 @@
 3. Chép ảnh, video và thư mục `EM1MOD/` (nếu có) từ thẻ sang máy tính. Mở thử vài tệp để kiểm tra bản sao
    trước khi định dạng thẻ hoặc chép gói cài. [Hướng dẫn sao lưu chi tiết](docs/huong-dan-firmware-em1-ii.md#sao-luu)
 
-### 2. Tải bộ cài và dựng gói
+### 2. Dựng gói v0.4c17
 
-1. Trên Windows 64 bit, tải `caduceus-build.exe`, đặt vào thư mục bạn có quyền ghi rồi nhấp đúp. EXE chạy
-   không cần Python. EXE chưa ký nên Windows SmartScreen có thể hiện cảnh báo. Bạn có thể dùng
-   `caduceus-em1mk2-source.zip`. Đối chiếu SHA-256 của EXE hoặc ZIP với `SHA256SUMS` trên trang phát hành.
-   [Tải bản em1mk2-v0.4c24](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24)
-2. Nếu dùng ZIP, cài Python 3.10 trở lên, giải nén toàn bộ rồi nhấp đúp `Build Caduceus (Windows).bat` hoặc
-   `Build Caduceus (Mac).command`. Trên Linux, chạy `build-caduceus-linux.sh` trong Terminal.
-3. Khi tải firmware lần đầu, cần kết nối Internet. Đọc giấy phép OM Digital Solutions trong cửa sổ chạy
-   và gõ `yes` nếu đồng ý. Chương trình kiểm SHA-256 của firmware gốc rồi tạo gói mặc định **v0.4c24** tại
-   `out/em1mk2-v0.4c24/` cạnh chương trình.
+> [!IMPORTANT]
+> **Không nhấp đúp vào `caduceus-build.exe`.** Nhấp đúp sẽ dựng v0.4c24. Hãy chạy lệnh có `--release v0.4c17` như dưới đây.
+
+**Windows 64 bit (không cần Python):**
+
+1. Tải `caduceus-build.exe` từ [trang phát hành em1mk2-v0.4c24](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24)
+   (EXE này chứa sẵn v0.4c17) và đặt vào một **thư mục trống**, ví dụ `D:\c17`. EXE chưa ký nên Windows SmartScreen
+   có thể cảnh báo. Đối chiếu SHA-256 với tệp `SHA256SUMS` trên trang phát hành.
+2. Mở thư mục đó, bấm chuột phải vào chỗ trống → **Open in Terminal** (hoặc gõ `powershell` vào thanh địa chỉ rồi
+   Enter), sau đó chạy lần lượt:
+
+   ```powershell
+   .\caduceus-build.exe build --release v0.4c17 --out out\em1mk2-v0.4c17
+   ```
+
+   ```powershell
+   .\caduceus-build.exe verify out\em1mk2-v0.4c17
+   ```
+
+**Windows / macOS / Linux có Python 3.10+:** tải **Source code (zip)** ở
+[trang phát hành v0.4c17-test](https://github.com/xtruong88/caduceus-em1ii/releases/tag/v0.4c17-test), giải nén, mở
+Terminal trong thư mục đó và chạy (macOS / Linux dùng `python3` thay cho `py`):
+
+```powershell
+py caduceus.py build --camera em1mk2 --release v0.4c17 --out out/em1mk2-v0.4c17
+```
+
+```powershell
+py caduceus.py verify out/em1mk2-v0.4c17
+```
+
+Lần đầu cần kết nối Internet. Đọc giấy phép OM Digital Solutions và gõ `yes` nếu đồng ý. Chương trình tự tải firmware
+gốc 3.7 từ máy chủ OM, kiểm SHA-256 rồi dựng gói vào `out/em1mk2-v0.4c17/`. Thư mục này phải chưa có hoặc đang trống.
+
+**Kiểm tra hash trước khi nạp.** Trong PowerShell:
+
+```powershell
+Get-FileHash out\em1mk2-v0.4c17\DCOLYMP\E1259999.BIN
+```
+
+Kết quả phải là `6DA28F37D7E9EC25BDF660D4708D3F4AB6E5A29F445F50029B8E539D8EB97D54`. Nếu khác, **dừng lại, đừng nạp**.
 
 | Tệp trong gói | Dùng để |
 |---|---|
-| `DCOLYMP/E1259999.BIN` | Nạp Caduceus v0.4c24. |
+| `DCOLYMP/E1259999.BIN` | Nạp Caduceus v0.4c17. |
 | `EM1MOD/LOOKS.BIN` | Chép lên thẻ nếu muốn dùng bộ look đi kèm. |
-| `restore/E1259999.BIN` | Nạp lại firmware OM 3.7. Giữ một bản trên máy tính trước khi nạp. |
+| `restore/E1259999.BIN` | Nạp lại firmware OM 3.7. **Giữ một bản trên máy tính trước khi nạp.** |
 
 Hai tệp firmware cùng tên `E1259999.BIN`. Kiểm tra **thư mục nguồn** để chắc mình chép đúng bản muốn nạp.
 
 ### 3. Chép thẻ và nạp firmware
 
-Lần đầu, nên nạp thử firmware gốc 3.7 để kiểm tra thẻ và đường khôi phục. Bỏ qua bước chép tự động khi
-chương trình hỏi, chép `restore/E1259999.BIN` lên thẻ thành `DCOLYMP/E1259999.BIN` rồi thực hiện các bước
-2–4 dưới đây. Khởi động máy và chụp thử trước khi tiếp tục nạp v0.4c24.
+Lần đầu, nên nạp thử firmware gốc 3.7 để kiểm tra thẻ và đường khôi phục: chép `restore/E1259999.BIN` lên thẻ thành
+`DCOLYMP/E1259999.BIN` rồi làm các bước 2–4 dưới đây. Khởi động máy và chụp thử trước khi nạp v0.4c17.
 [Hướng dẫn nạp thử bản gốc](docs/huong-dan-firmware-em1-ii.md#nap)
 
-1. Cắm thẻ có thư mục `DCIM`, kiểm tra chương trình chọn đúng ổ rồi xác nhận chép. Bạn cũng có thể tự chép
-   `DCOLYMP/E1259999.BIN` từ gói lên thẻ.
+1. Trên thẻ có thư mục `DCIM`, tạo thư mục `DCOLYMP/` ở gốc thẻ và chép `DCOLYMP/E1259999.BIN` từ gói vào. Muốn dùng
+   look đi kèm thì chép thêm `EM1MOD/LOOKS.BIN` vào thư mục `EM1MOD/` ở gốc thẻ.
    [Hướng dẫn chép thẻ và đối chiếu hash](docs/huong-dan-firmware-em1-ii.md#chep-the)
-2. Kiểm tra thư mục `DCOLYMP/` ở gốc thẻ chỉ có đúng tệp cập nhật cần nạp rồi eject thẻ khỏi máy tính.
-   Khi máy ảnh đang **OFF**, lắp pin đầy và cho thẻ vào **khe 1**. Giữ nút **OK** trong lúc gạt sang **ON**.
+2. Kiểm tra thư mục `DCOLYMP/` chỉ có đúng tệp cập nhật cần nạp rồi eject thẻ khỏi máy tính. Khi máy ảnh đang
+   **OFF**, lắp pin đầy và cho thẻ vào **khe 1**. Giữ nút **OK** trong lúc gạt sang **ON**.
 3. Khi **đèn sáng liên tục**, máy đang đọc và ghi firmware. **Giữ nguyên nguồn và thẻ.** Không tắt máy,
    mở nắp pin hoặc rút thẻ. Chờ đèn chuyển sang **nhấp nháy đều khoảng hai lần mỗi giây**.
 4. Khi đã xong, tắt máy, lấy thẻ ra và xoá `DCOLYMP/E1259999.BIN` trên thẻ. Giữ thư mục `EM1MOD/` nếu đã
@@ -59,17 +96,28 @@ chương trình hỏi, chép `restore/E1259999.BIN` lên thẻ thành `DCOLYMP/E
 Nếu đèn nháy nhanh ngay từ đầu hoặc khác trình tự trên, xem mục xử lý lỗi. Khi chưa rõ máy còn ghi hay không,
 giữ nguyên nguồn và thẻ. [Xử lý lỗi khi nạp](docs/huong-dan-firmware-em1-ii.md#loi)
 
-### 4. Khôi phục firmware gốc và cài đặt
+### 4. Nếu máy lặp khởi động: khôi phục firmware gốc
 
-Chép `restore/E1259999.BIN` từ gói lên thẻ thành `DCOLYMP/E1259999.BIN`, thay tệp cập nhật đang có.
-Lặp lại quy trình nạp ở mục 3. Sau khi máy khởi động bình thường, kiểm tra **Body 3.7** rồi dùng
+Giữ **OK** khi bật nguồn vẫn vào được chế độ cập nhật, kể cả khi máy đang lặp khởi động. Chép `restore/E1259999.BIN`
+từ gói lên thẻ thành `DCOLYMP/E1259999.BIN`, thay tệp cập nhật đang có, rồi lặp lại quy trình nạp ở mục 3. Sau khi
+máy khởi động bình thường, kiểm tra **Body 3.7** rồi dùng
 **OM Workspace → Camera → Custom Settings → Load → Load from File** để nạp lại cài đặt đã lưu.
 [Hướng dẫn khôi phục chi tiết](docs/huong-dan-firmware-em1-ii.md#khoi-phuc)
 
-| Bản | Cách chọn |
+### 5. Báo kết quả
+
+Mở một [issue](https://github.com/xtruong88/caduceus-em1ii/issues) hoặc nhắn trực tiếp, ghi:
+
+1. Máy có khởi động bình thường với v0.4c17 không.
+2. Nếu lặp khởi động: từ lúc bật đến lúc máy tắt mất khoảng bao lâu (≈1 giây / 10 giây / 30 giây), màn hình có lên
+   không, cửa trập có kêu không.
+3. Nếu khởi động được: chụp JPEG với Color Creator, ảnh 65:24 / 21:9 và quay video ngắn có lỗi gì không.
+4. Hash `E1259999.BIN` bạn đã nạp (kết quả lệnh `Get-FileHash` ở trên).
+
+| Bản | Trạng thái |
 |---|---|
-| **v0.4c24** | Bản mặc định nên dùng. Halo mặc định Off. |
-| v0.4c25t / v0.4c26t / v0.4c27t | Bản thử, chỉ chọn bằng `--release`. |
+| **v0.4c17** | Bản thử đang cần kết quả. Chọn bằng `--release v0.4c17`. |
+| v0.4c24 / v0.4c25t / v0.4c26t / v0.4c27t | **Đừng nạp**: làm một máy lặp khởi động. |
 
 **Caduceus cho E-M1 II** là bản port của [Caduceus](https://github.com/cakelesscoder/caduceus-ep7) (bộ patch firmware
 mã nguồn mở cho Olympus PEN E-P7) sang **Olympus OM-D E-M1 Mark II firmware 3.7** (build 3700, model 0x1250). Nó đưa
@@ -80,7 +128,7 @@ màu quanh vùng sáng, chỉnh ở trang **Halo** của Color Creator).
 Nó đọc **cùng định dạng look, cùng mã chia sẻ và cùng file trên thẻ** với bản E-P7 và OM-3, nên một look dùng được trên
 mọi máy.
 
-**Bản thử công khai: cần người thử.** v0.4c24 và ba bản thử sau đó đang chờ thử trên máy thật.
+**Bản thử công khai: cần người thử.** v0.4c17 đang chờ thử trên máy thật. Từ v0.4c24 trở đi làm máy lặp khởi động, đừng nạp.
 **[Tham gia thử](#tham-gia-thử)** · **[Changelog](patches/omdem1mk2/CHANGELOG.md)** (tiếng Anh) ·
 **[Ghi chú port](docs/PORT_EM1MK2.md)** (tiếng Anh) ·
 Hướng dẫn chi tiết (tính năng, sao lưu, cài, dùng từng tính năng, khôi phục): [đọc trên GitHub (Markdown)](docs/huong-dan-firmware-em1-ii.md) ·
