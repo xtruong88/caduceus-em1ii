@@ -4,44 +4,24 @@
 
 ## Quick start
 
+**Build to test: v0.4c17.** Only for an **E-M1 Mark II on firmware 3.7**, 64-bit Windows.
+
 > [!CAUTION]
-> **Do not flash v0.4c24, v0.4c25t, v0.4c26t or v0.4c27t.** They put one E-M1 II into a **boot loop** (screen on,
-> shutter click, then off). Flashing the stock restore file brought the camera back.
-> [Diagnosis (Vietnamese)](plans/reports/debug-261128-0104-em1ii-c24-bootloop.md)
+> Do not flash v0.4c24 or later: they **boot-loop**. This build has not run on a camera yet and may hang it.
 
-**v0.4c17** is the build that needs testers: looks / Color Creator, 65:24 (XPan) and 21:9 stills, 9 h video, focus
-stacking and card looks. It has **no** halation, no watchdog change and no Section 6 growth. It passed the emulator
-checks but has **not run on a camera** with the stock 3.7 file OM now serves. Use an **Olympus OM-D E-M1 Mark II on
-official firmware 3.7**, charge the battery and back up the camera settings and SD card first.
-[Backup and installation guide](docs/huong-dan-firmware-em1-ii.md#sao-luu)
+1. **Back up** the card and the camera settings (OM Workspace → Camera → Custom Settings → Save). Charge the battery.
+2. **Download** [`caduceus-build.exe`](https://github.com/xtruong88/caduceus-em1ii/releases/download/em1mk2-v0.4c17/caduceus-build.exe),
+   put it in an empty folder and **double-click** it. If Windows warns, choose *More info → Run anyway*.
+3. Type `yes` to accept the OM licence. It downloads the stock firmware and builds the package. Insert the SD card,
+   type its number, then `y` to copy the files. **Keep** the `out` folder (it holds the restore file `restore/E1259999.BIN`).
+4. Camera off, card in **slot 1**, **hold OK and switch on**. Steady LED = flashing: **do not switch off or remove
+   the battery/card**. Regular blink = done. Switch off, delete `DCOLYMP/E1259999.BIN` from the card, switch on.
+5. **Report** whether it boots. If it boot-loops, say roughly how long from power-on to off: 1, 10 or 30 s.
 
-1. **Do not double-click `caduceus-build.exe`: that builds v0.4c24.** Download it from the
-   [em1mk2-v0.4c24 release](https://github.com/xtruong88/caduceus-em1ii/releases/tag/em1mk2-v0.4c24) (it includes
-   v0.4c17) into an empty folder, open a terminal there and run:
+**Boot loop?** Copy `out/.../restore/E1259999.BIN` into `DCOLYMP/` on the card and hold OK + switch on as in step 4.
+The camera returns to stock 3.7.
 
-   ```powershell
-   .\caduceus-build.exe build --release v0.4c17 --out out\em1mk2-v0.4c17
-   ```
-
-   With Python 3.10+, use **Source code (zip)** from the
-   [v0.4c17-test release](https://github.com/xtruong88/caduceus-em1ii/releases/tag/v0.4c17-test) instead:
-   `py caduceus.py build --camera em1mk2 --release v0.4c17 --out out/em1mk2-v0.4c17` (`python3` on macOS / Linux).
-2. Read the OM Digital Solutions licence and type `yes` if you accept. The builder downloads and verifies the
-   official 3.7 firmware. The SHA-256 of `out/em1mk2-v0.4c17/DCOLYMP/E1259999.BIN` must be
-   `6da28f37d7e9ec25bdf660d4708d3f4ab6e5a29f445f50029b8e539d8eb97d54`. If it differs, stop.
-3. Copy `DCOLYMP/E1259999.BIN` (and `EM1MOD/LOOKS.BIN` for the bundled looks) to the card. Keep
-   `restore/E1259999.BIN` on your computer. [SD card instructions](docs/huong-dan-firmware-em1-ii.md#chep-the)
-4. Put the card in **slot 1** with the camera off, then hold **OK** while switching on. Leave the camera alone while
-   the LED is steady. A regular blink about twice a second means the update is finished.
-   [Flash and restore instructions](docs/huong-dan-firmware-em1-ii.md#nap)
-5. If it boot-loops, hold **OK** while switching on still reaches the updater: flash `restore/E1259999.BIN` the same
-   way. Then [open an issue](https://github.com/xtruong88/caduceus-em1ii/issues) with whether it booted and, if not,
-   how long it ran before switching off (about 1 s / 10 s / 30 s).
-
-| Build | Status |
-|---|---|
-| **v0.4c17** | Test build awaiting camera results. Select it with `--release v0.4c17`. |
-| v0.4c24 / v0.4c25t / v0.4c26t / v0.4c27t | **Do not flash**: boot loop on one camera. |
+Full guide (Vietnamese): [huong-dan-firmware-em1-ii.md](docs/huong-dan-firmware-em1-ii.md)
 
 **Caduceus for E-M1 II** is a port of [Caduceus](https://github.com/cakelesscoder/caduceus-ep7) (open-source
 firmware patches for the Olympus PEN E-P7) to the **Olympus OM-D E-M1 Mark II on firmware 3.7** (build 3700,

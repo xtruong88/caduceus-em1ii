@@ -9,7 +9,7 @@ files for your SD card. Every output hash must match the release's SHA256SUMS
 exactly, otherwise nothing is written.
 
   python3 caduceus.py [--release VERSION] [--sd CARD]
-  python3 caduceus.py build --release v0.4c24 [--out DIR] [--stock FILE]
+  python3 caduceus.py build --release v0.4c17 [--out DIR] [--stock FILE]
   python3 caduceus.py verify DIR
   python3 caduceus.py list
 
@@ -43,7 +43,7 @@ DATA_ROOT = Path(sys._MEIPASS) if FROZEN else Path(__file__).resolve().parent
 APP_ROOT = Path(sys.executable).resolve().parent if FROZEN else DATA_ROOT
 RELEASES = DATA_ROOT / 'releases'
 INSTALL_CAMERA = 'em1mk2'
-RECOMMENDED_RELEASE = 'v0.4c24'
+RECOMMENDED_RELEASE = 'v0.4c17'
 INSTALL_GUIDE = ('https://github.com/xtruong88/caduceus-em1ii/blob/main/'
                  'docs/huong-dan-firmware-em1-ii.md')
 CATALOG = 'https://fw01.om-digitalsolutions.net/ww_inform/fcache.do'
@@ -859,7 +859,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest='cmd')
     b = sub.add_parser('build', help='download stock, apply a release, write card files')
     b.add_argument('--camera', choices=[INSTALL_CAMERA], default=INSTALL_CAMERA)
-    b.add_argument('--release', required=True, help='release name (for example v0.4c24)')
+    b.add_argument('--release', required=True, help='release name (for example v0.4c17)')
     b.add_argument('--out', default=APP_ROOT / 'out' if FROZEN else 'out',
                    help='new or empty output directory (default: out)')
     b.add_argument('--stock', help='use an already downloaded stock file instead of downloading')

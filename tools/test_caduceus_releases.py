@@ -21,11 +21,11 @@ class ReleaseTests(unittest.TestCase):
         with redirect_stdout(io.StringIO()) as output:
             self.assertEqual(caduceus.main(['list']), 0)
         lines = output.getvalue().splitlines()
-        self.assertIn('em1mk2/v0.4c24 (recommended)', lines)
+        self.assertIn('em1mk2/v0.4c17 (recommended)', lines)
         self.assertIn('em1mk2/v0.4c27t (test)', lines)
         self.assertIn('em1mk2/v0.4c13 (requires old stock)', lines)
         self.assertIn('em1mk2/v0.4c15 (requires old stock)', lines)
-        self.assertIn('em1mk2/v0.4c17', lines)
+        self.assertIn('em1mk2/v0.4c24', lines)
 
     def test_easy_pins_recommended_em1_release_even_with_a_newer_release(self):
         available = releases('em1mk2') + ['em1mk2/v0.4c28']
@@ -42,7 +42,7 @@ class ReleaseTests(unittest.TestCase):
         ):
             self.assertEqual(caduceus.main([]), 0)
             self.assertEqual(build.call_args.args[0].camera, 'em1mk2')
-            self.assertEqual(build.call_args.args[0].release, 'v0.4c24')
+            self.assertEqual(build.call_args.args[0].release, 'v0.4c17')
             self.assertEqual(caduceus.main(['--release', 'v0.4c27t']), 0)
             self.assertEqual(build.call_args.args[0].release, 'v0.4c27t')
 
